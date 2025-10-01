@@ -1,0 +1,63 @@
+#!/usr/bin/env bash
+
+# `depot` Creates, maintains and updates a Debian package repository.
+
+# Update the package and Release/InRelease files keeping the repository
+# structure intact.
+
+# Uncomment the following line to enable debugging
+# set -xou pipefail
+
+appTitle="depot"
+
+mapfile < /usr/share/doc/depot/version ; appVersion="${MAPFILE[0]}"
+
+copyright="$(cat <<- EOL
+Copyright:
+    2025 MLS Tidbits <contact@mlstidbits.com>
+    2025 Michael Schaecher <michaelschaecher@mlstidbits.com>
+License:
+    GPLv3+ as published by the Free Software Foundation all rights reserved.
+EOL
+)"
+
+appInfo="$(cat <<- EOL
+$appTitle - $appVersion - A simple Debian package repository manager.
+EOL
+)"
+
+appHelp="$(cat <<- EOL
+$appInfo
+Usage: $0 [options] <command> [<args>]
+
+Commands:
+    init                    Initialize a new repository
+    add <package>...        Add one or more .deb packages to the repository
+    remove <package>        Remove a package from the repository
+    update                  Update the Release and InRelease files
+    sign                    Sign the Release file with GPG
+    help                    Show this help message
+    version                 Show version information
+    help                    Show this help message
+    version                 Show version information
+Options:
+    -h, --help              Show this help message for \`help\`, \`init\`, \`add\`,
+                            \`remove\`, \`update\` and \`sign\` commands
+
+$copyright
+EOL
+)"
+
+case "$1" in
+    init                    ) /usr/lib/depot/init "$@"                  ;;
+    add                     ) /usr/lib/depot/add "$@"                   ;;
+    rm                      ) /usr/lib/depot/remove "$@"                ;;
+    update                  ) /usr/lib/depot/update "$@"                ;;
+    sign                    ) /usr/lib/depot/sign "$@"                  ;;
+    help                    ) echo "$appHelp" ; exit 0                  ;;
+    version|-v|--version    ) echo -e "$appInfo\n\n$copyright" ; exit 0 ;;
+    *                       )
+        echo -e "Unknown command: $1\nUse '$0 help' to see available commands."
+        exit 1
+    ;;
+esac
