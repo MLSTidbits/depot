@@ -1,19 +1,31 @@
-Source: repo
+Source: depot
 Section: utils
 Priority: optional
 Maintainer: MLS Tidbits <contact@mlstidbits.com>
 Build-Depends:
  debhelper-compat (= 13), dh-make, pandoc, git
 Standards-Version: 4.6.0
-Homepage: https://github.com/MLSTidbits/repo
+Homepage: https://github.com/MLSTidbits/depot
 #Vcs-Browser: https://salsa.debian.org/debian/template
-Vcs-Git: https://github.com/MLSTidbits/repo.git
+Vcs-Git: https://github.com/MLSTidbits/depot.git
 Rules-Requires-Root: no
 
-Package: repo
+Package: depot
 Architecture: any
 Depends:
- dpkg-dev, jq, nano, yq
-Description: A tool for managing Debian package archives
- Designed to maintain deb archives, providing a way of keeping
- packages and Release/InRelease files in sync.
+ dpkg-dev, nano, apt-utils
+Description: Create, manage, and serve a custom APT repository
+ depot is a tool to create, manage, and serve a custom APT repository.
+ .
+ It simplifies the process of setting up a local repository for Debian-based systems,
+ allowing users to easily add, remove, and update packages.
+ .
+ Features include:
+  - Easy repository creation and management
+  - Support for multiple distributions and architectures
+  - Automatic generation of necessary metadata files
+  - Produce and sign Release files for added security
+  - Simple integration with existing APT tools and workflows
+ .
+ Whether you're managing a small set of packages or a large-scale deployment,
+ depot provides the tools you need to maintain your own APT repository efficiently.
