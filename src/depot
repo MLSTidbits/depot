@@ -8,9 +8,21 @@
 # Uncomment the following line to enable debugging
 # set -xou pipefail
 
+function app-info {
+
+    case "$1" in
+        info       ) echo -e "$appTitle - [$1] $2" ;;
+        warning    ) echo -e "$appTitle - [$1] $2" ;;
+        error      ) echo -e "$appTitle - [$1] $2" ; exit 1 ;;
+        *          ) echo -e "$appTitle - [unknown] $2" ;;
+    esac
+
+}
+
 appTitle="depot"
 
-mapfile < /usr/share/doc/depot/version ; appVersion="${MAPFILE[0]}"
+# Change mapfile to /usr/share/doc/depot for production releases
+appVersion="$(cat doc/version 2>/dev/null || echo "unknown")"
 
 copyright="$(cat <<- EOL
 Copyright:
@@ -48,6 +60,8 @@ $copyright
 EOL
 )"
 
+[[ $# -eq 0 ]] && { echo "$appHelp" ; exit 0 ; }
+
 case "$1" in
     init                    ) /usr/lib/depot/init "$@"                  ;;
     add                     ) /usr/lib/depot/add "$@"                   ;;
@@ -57,7 +71,6 @@ case "$1" in
     help                    ) echo "$appHelp" ; exit 0                  ;;
     version|-v|--version    ) echo -e "$appInfo\n\n$copyright" ; exit 0 ;;
     *                       )
-        echo -e "Unknown command: $1\nUse '$0 help' to see available commands."
-        exit 1
+        app-info error "Unknown command: \`$1\`. Use '$0 help' to see available commands."
     ;;
 esac
