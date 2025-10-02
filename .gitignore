@@ -10,6 +10,8 @@ dist/
 changelog
 version
 md5sums
+src/repo
+man/repo.1.md
 
 *.substvars
 debian/files
