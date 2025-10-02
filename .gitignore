@@ -16,5 +16,5 @@ man/repo.1.md
 *.substvars
 debian/files
 debian/.debhelper/
-debian/repo/
+debian/depot/
 man/*.1
