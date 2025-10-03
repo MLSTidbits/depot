@@ -48,8 +48,7 @@ Commands:
     remove <package>        Remove a package from the repository
     update                  Update the Release and InRelease files
     sign                    Sign the Release file with GPG
-    help                    Show this help message
-    version                 Show version information
+    config                  Manage local and global configuration options
     help                    Show this help message
     version                 Show version information
 Options:
