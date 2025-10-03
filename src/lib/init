@@ -1,0 +1,122 @@
+#!/usr/bin/env bash
+
+# Initialize a new Debian package archive.
+
+function app-info {
+
+    case "$1" in
+        info       ) echo -e "$appTitle - [$1] $2" ;;
+        warning    ) echo -e "$appTitle - [$1] $2" ;;
+        error      ) echo -e "$appTitle - [$1] $2" ; exit 1 ;;
+        *          ) echo -e "$appTitle - [unknown] $2" ;;
+    esac
+
+}
+
+appTitle="depot"
+
+# Change mapfile to /usr/share/doc/depot for production releases
+appVersion="$(cat doc/version 2>/dev/null || echo "unknown")"
+
+helpInfo="$(cat <<- EOF
+$appTitle - $appVersion - A simple Debian package repository manager.
+Usage: $appTitle init <flags> arg...
+
+Flags:
+    -o, --origin        What is the name of the organization or individual
+                        responsible for this repository.
+    -l, --label         The label field in the Release file.
+    -s, --suite         This is the codename for the release version, e.g., Focal or Buster.
+                        Defaults to 'stable' if not specified.
+    -c, --codename      Set the codename field; this is often the same as suite.
+    -a, --arch          Set the architectures supported by this repository. Defaults to the
+                        output of 'dpkg --print-architecture'.
+    -C, --components    Set the components for this repository. Defaults to 'main'. Multiple
+                        components can be specified separated by spaces. For example: \`main\`,
+                        \`contrib non-free\`.
+    -p, --pool          What type of pool structure to use. Options are 'by alphabet and package'
+                        (default), 'by package', by library and package', or 'flat'.
+    -d, --description   A short description of the repository.
+    -h, --help          Show this help message and exit.
+
+
+Examples:
+    $appTitle init --origin "My Company" --suite "focal" --pool "flat"
+    $appTitle init --origin "My Company" --suite "focal" --components "main contrib non-free"
+    $appTitle init --origin "My Company" --suite "focal" --arch "amd64 arm64"
+
+Note: The init command can only be run once per repository. Running it again will
+result in an error (unless you delete the .depot directory first)
+EOF
+)"
+
+# Set defaults for the init command
+ORIGIN=""
+LABEL="default"
+SUITE="stable"
+codename="$SUITE"
+CODENAME="$(dpkg --print-architecture)"
+COMPONENTS="( main )"
+DESCRIPTION="Debian/Ubuntu package repository"
+POOL="alpha"
+
+
+# Bail if repo already exists
+[[ -d .depot ]] &&
+app-info error "Archive already initialized. 'depot init' can only be run once."
+
+while [[ "$#" -gt "0" ]] ; do case "$1" in
+    -o|--origin             ) shift ; ORIGIN="$1"       ; shift   ;;
+    -l|--label              ) shift ; LABEL="$1"        ; shift   ;;
+    -s|--suite              ) shift ; SUITE="$1"        ; shift   ;;
+    -c|--codename           ) shift ; CODENAME="$1"     ; shift   ;;
+    -a|--arch               ) shift ; ARCH="$1"         ; shift   ;;
+    -C|--components         ) shift ; COMPONENTS=("$1") ; shift   ;;
+    -d|--description        ) shift ; DESCRIPTION="$1"  ; shift   ;;
+    -p|--pool               ) shift ; POOL="$1"         ; shift   ;;
+    -h|--help               ) echo "$helpInfo"          ; exit 0  ;;
+    -*                      ) app-info error "Unknown flag: '$1'" ;;
+    *                       ) break                               ;;
+esac ; done
+
+echo "Initializing new Debian package repository..."
+echo "Codename: $CODENAME"
+echo "Components: ${COMPONENTS[*]}"
+
+# Create depot metadata
+mkdir -p .depot
+
+cat > .depot/config <<- EOF
+# depot repository configuration
+REPO_DIR=$(pwd)
+ORIGIN="$ORIGIN"
+LABEL="$LABEL"
+SUITE="$SUITE"
+CODENAME="$CODENAME"
+ARCH="$ARCH"
+COMPONENTS="${COMPONENTS[*]}"
+DESCRIPTION="$DESCRIPTION"
+POOL="$POOL"
+EOF
+
+# Create repo structure
+mkdir -p dists/"$CODENAME"
+for comp in "${COMPONENTS[@]}"; do
+    mkdir -p "dists/$CODENAME/$comp/binary-amd64"
+done
+
+case "$POOL" in
+    alpha|library)
+        for a in {a..z} ; do
+            [[ "$POOL" == "library" ]] && mkdir -p "pool/lib$a"
+            [[ "$POOL" == "alpha" ]] && mkdir -p "pool/$a"
+        done
+    ;;
+    package ) mkdir -p pool ;;
+    flat    ) ;;
+esac
+
+echo "Repository initialized in $(pwd)"
+echo "Configuration written to .depot/config"
+
+exit 0
