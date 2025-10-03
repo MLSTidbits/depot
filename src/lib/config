@@ -1,0 +1,124 @@
+#!/usr/bin/env bash
+
+# Define local and global configuration for the depot repository.
+
+function app-info {
+
+    case "$1" in
+        info       ) echo -e "$appTitle - [$1] $2" ;;
+        warning    ) echo -e "$appTitle - [$1] $2" ;;
+        error      ) echo -e "$appTitle - [$1] $2" ; exit 1 ;;
+        *          ) echo -e "$appTitle - [unknown] $2" ;;
+    esac
+
+}
+
+appTitle="depot"
+
+# Change mapfile to /usr/share/doc/depot for production releases
+appVersion="$(cat doc/version 2>/dev/null || echo "unknown")"
+
+copyright="$(cat <<- EOL
+Copyright:
+    2025 MLS Tidbits <contact@mlstidbits.com>
+    2025 Michael Schaecher <michaelschaecher@mlstidbits.com>
+License:
+    GPLv3+ as published by the Free Software Foundation all rights reserved.
+EOL
+)"
+
+appInfo="$(cat <<- EOL
+$appTitle - $appVersion - Add/Modify maintainer and GPG signing configuration.
+EOL
+)"
+
+appHelp="$(cat <<- EOF
+$appInfo
+Usage: $appTitle config <flags> [options] arg...
+
+Flags:
+    -l, --local         Set configuration for the current repository only (default).
+    -g, --global        Set configuration globally for the user (in ~/.depot/config).
+    -k, --gpg-key-id    The GPG key ID to use for signing
+    -h, --help          Show this help message and exit.
+
+Options:
+    maintainer.name        The name of the package maintainer.
+    maintainer.email       The email address of the package maintainer.
+    gpg.id                 The GPG key ID to use for signing the Release file.
+
+Examples:
+    $appTitle config --local gpg.id ABCDEF12
+    $appTitle config --global gpg.id ABCDEF12
+    $appTitle config --local maintainer.name "John Doe"
+    $appTitle config --global maintainer.email "johndoe@email.com"
+
+Note: The config command can be run multiple times to set or update configuration values.
+
+$copyright
+EOF
+)"
+
+[[ ! -d .depot && ! -f ~/.depot/config ]] &&
+app-info error "No repository found. Please run '$0 init' first to create a new repository."
+
+[[ $# -eq 0 ]] && { echo "$appHelp" ; exit 0 ; }
+
+while [[ $# -gt 0 ]]; do case "$1" in
+    -l|--local       ) CONFIG_SCOPE="local" ; shift ;;
+    -g|--global      ) CONFIG_SCOPE="global" ; shift ;;
+    -k|--gpg-key-id  ) GPG_KEY_ID="$2" ; shift 2 ;;
+    -h|--help        ) echo "$appHelp" ; exit 0 ;;
+    *               )
+        if [[ "$1" == *=* ]]; then
+            KEY="${1%%=*}"
+            VALUE="${1#*=}"
+            case "$KEY" in
+                maintainer.name       ) MAINTAINER_NAME="$VALUE" ;;
+                maintainer.email      ) MAINTAINER_EMAIL="$VALUE" ;;
+                gpg.id                ) GPG_KEY_ID="$VALUE" ;;
+                *                     )
+                    app-info error \
+                    "Unknown configuration key: \`$KEY\`. Use '$0 help' to see available options."
+                ;;
+            esac
+            shift
+        else
+            app-info error "Invalid argument: \`$1\`. Use '$0 help' to see usage."
+        fi
+    ;;
+esac ; done
+
+# Default to local configuration if no scope is specified
+CONFIG_SCOPE="${CONFIG_SCOPE:-local}"
+CONFIG_FILE="settings.conf"
+
+[[ "$CONFIG_SCOPE" == "local" ]] && CONFIG_PATH=".depot/$CONFIG_FILE"
+[[ "$CONFIG_SCOPE" == "global" ]] && CONFIG_PATH="$HOME/.depot/$CONFIG_FILE"
+
+[[ ! -f "$CONFIG_PATH" ]] && touch "$CONFIG_PATH"
+
+# Update configuration file
+{
+    if [[ -n "$MAINTAINER_NAME"  ]] && grep -qE '^MAINTAINER_NAME=' "$CONFIG_PATH" ; then
+        sed -i "s|^MAINTAINER_NAME=.*|MAINTAINER_NAME=\"$MAINTAINER_NAME\"|" "$CONFIG_PATH"
+    else
+        echo "MAINTAINER_NAME=\"$MAINTAINER_NAME\"" >> "$CONFIG_PATH"
+    fi
+
+    if [[ -n "$MAINTAINER_EMAIL" ]] && grep -qE '^MAINTAINER_EMAIL=' "$CONFIG_PATH" ; then
+        sed -i "s|^MAINTAINER_EMAIL=.*|MAINTAINER_EMAIL=\"$MAINTAINER_EMAIL\"|" "$CONFIG_PATH"
+    else
+        echo "MAINTAINER_EMAIL=\"$MAINTAINER_EMAIL\"" >> "$CONFIG_PATH"
+    fi
+
+    if [[ -n "$GPG_KEY_ID" ]] && grep -qE '^GPG_ID=' "$CONFIG_PATH" ; then
+        sed -i "s|^GPG_ID=.*|GPG_ID=\"$GPG_KEY_ID\"|" "$CONFIG_PATH"
+    else
+        echo "GPG_ID=\"$GPG_KEY_ID\"" >> "$CONFIG_PATH"
+    fi
+} 2>/dev/null
+
+app-info info "Configuration updated in $CONFIG_PATH"
+
+exit 0
