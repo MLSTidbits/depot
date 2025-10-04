@@ -13,7 +13,7 @@ Rules-Requires-Root: no
 Package: depot
 Architecture: any
 Depends:
- dpkg-dev, nano, apt-utils
+ dpkg-dev, apt-utils
 Description: Create, manage, and serve a custom APT repository
  depot is a tool to create, manage, and serve a custom APT repository.
  .
