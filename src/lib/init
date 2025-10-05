@@ -54,9 +54,9 @@ EOF
 ORIGIN=""
 LABEL="default"
 SUITE="stable"
-codename="$SUITE"
-CODENAME="$(dpkg --print-architecture)"
-COMPONENTS="( main )"
+CODENAME="$SUITE"
+ARCH="$(dpkg --print-architecture)"
+COMPONENTS=( main )
 DESCRIPTION="Debian/Ubuntu package repository"
 POOL="alpha"
 
@@ -100,20 +100,22 @@ POOL="$POOL"
 EOF
 
 # Create repo structure
-mkdir -p dists/"$CODENAME"
 for comp in "${COMPONENTS[@]}"; do
-    mkdir -p "dists/$CODENAME/$comp/binary-amd64"
+    mkdir -p "dists/$CODENAME/$comp/binary-$ARCH"
 done
 
 case "$POOL" in
     alpha|library)
         for a in {a..z} ; do
-            [[ "$POOL" == "library" ]] && mkdir -p "pool/lib$a"
-            [[ "$POOL" == "alpha" ]] && mkdir -p "pool/$a"
+            [[ "$POOL" == "library" ]] && mkdir -p "pool/${COMPONENTS[*]}/lib${a}"
+            [[ "$POOL" == "alpha" ]] && mkdir -p "pool/${COMPONENTS[*]}/${a}"
         done
     ;;
-    package ) mkdir -p pool ;;
-    flat    ) ;;
+    flat ) mkdir -p pool ;;
+    *    )
+        app-info error \
+        "Unknown pool structure: '$POOL'. Valid options are 'alpha', 'library', 'flat'."
+    ;;
 esac
 
 echo "Repository initialized in $(pwd)"
