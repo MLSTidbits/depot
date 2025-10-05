@@ -14,7 +14,7 @@ function app-info {
 
 }
 
-add_package () {
+function add_package () {
 
     local deb="$1"
     [[ ! -f "$deb" ]] && app-info error "File not found: $deb"
@@ -100,11 +100,12 @@ Options:
 
 Examples:
     $appTitle add --all ../
-    $appTitle add --single ../mypackage_1.0-1_amd64.deb
-    $appTitle add --single --buildinfo ../mypackage_1.0-1_amd64.deb
+    $appTitle add --single ../my-package_1.0-1_amd64.deb
+    $appTitle add --single --buildinfo ../my-package_1.0-1_amd64.deb
     $appTitle add --all --buildinfo --changes ../
 
-Note: The add command can be run multiple times to add more packages to the repository.
+Note:
+    The add command can be run multiple times to add more packages to the repository.
 
 Copyright:
     2025 MLS Tidbits <contact@mlstidbits.com>
@@ -136,7 +137,7 @@ addBuildinfo=false
 addChanges=false
 
 [[ "$pool" == "alpha" || "$pool" == "library" ]] && poolDir=".depot/pool/$components"
-[[ "$pool" == "package" ]] && poolDir=".depot/pool/"
+[[ "$pool" == "flat" ]] && poolDir=".depot/pool/"
 
 while [[ $# -gt 0 ]]; do case "$1" in
         -a|--all            ) addAll=true       ; shift  ;;
