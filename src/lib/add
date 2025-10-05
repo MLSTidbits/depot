@@ -1,0 +1,157 @@
+#!/usr/bin/env bash
+
+# Add one or more .deb packages and corresponding buildinfo and changes files
+# to the repository.
+
+function app-info {
+
+    case "$1" in
+        info       ) echo -e "$appTitle - [$1] $2" ;;
+        warning    ) echo -e "$appTitle - [$1] $2" ;;
+        error      ) echo -e "$appTitle - [$1] $2" ; exit 1 ;;
+        *          ) echo -e "$appTitle - [unknown] $2" ;;
+    esac
+
+}
+
+add_package () {
+
+    local deb="$1"
+    [[ ! -f "$deb" ]] && app-info error "File not found: $deb"
+
+    # Extract metadata from the .deb
+    local pkg ver arch destDir firstLetter
+
+    pkg=$(dpkg-deb -f "$deb" Package)
+    ver=$(dpkg-deb -f "$deb" Version)
+    arch=$(dpkg-deb -f "$deb" Architecture)
+
+    # Determine directory structure
+    case "$pool" in
+        alpha)
+            firstLetter="${pkg:0:1}"
+            destDir="$poolDir/$firstLetter/$pkg"
+            ;;
+        library)
+            if [[ "$pkg" == lib* ]]; then
+                firstLetter="l"
+            else
+                firstLetter="${pkg:0:1}"
+            fi
+            destDir="$poolDir/$firstLetter/$pkg"
+            ;;
+        flat|*)
+            destDir="$poolDir/$pkg"
+            ;;
+    esac
+
+    local baseName="${deb%.deb}"
+
+    if [[ "$addAll" == true ]] ; then
+        mkdir -p "$destDir"
+        app-info info "Adding $pkg ($ver [$arch]) from $deb"
+        mv -v "$deb" "$destDir/"
+    fi
+
+    # ----------------------------------------------------------------------
+    # --all: move every .deb (and optionally .buildinfo / .changes) from a directory recursively
+    # ----------------------------------------------------------------------
+    if $addAll; then
+        srcDir="${1:-.}"
+        [[ ! -d "$srcDir" ]] && app-info error "Directory not found: $srcDir"
+
+        app-info info "Recursively adding all packages from: $srcDir"
+
+        # Find every .deb file recursively
+        find "$srcDir" -type f -name "*.deb" | while read -r deb; do
+            add_package "$deb"
+        done
+    fi
+
+    # Move associated files if requested
+    if $addBuildinfo; then
+        for bi in "${baseName}"*.buildinfo; do
+            [[ -f "$bi" ]] && { app-info info "  + moving $(basename "$bi")"; mv -v "$bi" "$destDir/"; }
+        done
+    fi
+
+    if $addChanges; then
+        for ch in "${baseName}"*.changes; do
+            [[ -f "$ch" ]] && { app-info info "  + moving $(basename "$ch")"; mv -v "$ch" "$destDir/"; }
+        done
+    fi
+}
+
+appTitle="depot"
+
+# Change mapfile to /usr/share/doc/depot for production releases
+appVersion="$(cat doc/version 2>/dev/null || echo "unknown")"
+
+helpInfo="$(cat <<- EOF
+$appTitle - $appVersion - Add one or more .deb packages to the repository.
+Usage: $appTitle add [options] <package>...
+
+Options:
+    -a, --all           Add all .deb packages.
+    -s, --single        Add a single .deb package (default).
+    -b, --buildinfo     Also add the corresponding .buildinfo file if it exists.
+    -c, --changes       Also add the corresponding .changes file if it exists.
+    -h, --help          Show this help message and exit.
+
+Examples:
+    $appTitle add --all ../
+    $appTitle add --single ../mypackage_1.0-1_amd64.deb
+    $appTitle add --single --buildinfo ../mypackage_1.0-1_amd64.deb
+    $appTitle add --all --buildinfo --changes ../
+
+Note: The add command can be run multiple times to add more packages to the repository.
+
+Copyright:
+    2025 MLS Tidbits <contact@mlstidbits.com>
+    2025 Michael Schaecher <michaelschaecher@mlstidbits.com>
+License:
+    GPLv3+ as published by the Free Software Foundation all rights reserved.
+EOF
+)"
+
+[[ $# -eq 0 ]] && { echo "$helpInfo" ; exit 0 ; }
+
+[[ -f .depot/init ]] && source .depot/init
+[[ -f .depot/config ]] && source .depot/config
+
+codename="${CODENAME:-stable}"
+components="${COMPONENTS:-( main )}"
+arch="${ARCH:-$(dpkg --print-architecture)}"
+
+# The pool structure is either 'by alphabet and package' (default),
+# 'flat package only' or 'by library and package'.
+pool="${POOL:-alpha}"
+
+debFiles=()
+
+# Default options
+addAll=false
+addSingle=""
+addBuildinfo=false
+addChanges=false
+
+[[ "$pool" == "alpha" || "$pool" == "library" ]] && poolDir=".depot/pool/$components"
+[[ "$pool" == "package" ]] && poolDir=".depot/pool/"
+
+while [[ $# -gt 0 ]]; do case "$1" in
+        -a|--all            ) addAll=true       ; shift  ;;
+        -s|--single         )
+            echo "$2" | grep -qE '-' || app-info error \
+            "A valid .deb package must be specified when using the --single option."
+            addSingle="$2"   ; shift 2
+            ;;
+        -b|--buildinfo      ) addBuildinfo=true ; shift  ;;
+        -c|--changes        ) addChanges=true   ; shift  ;;
+        -h|--help           ) echo "$helpInfo"  ; exit 0 ;;
+        -*           )
+            app-info error \
+            "Unknown option: \`$1\`. Use '$appTitle add --help' to see available options." ;;
+        *                 ) break ;;
+esac ; done
+
+
