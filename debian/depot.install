@@ -1,2 +1,7 @@
-src/repo usr/bin/
-src/config.yaml usr/share/repo/
+src/depot usr/bin/
+src/lib/remove usr/lib/depot/
+src/lib/add usr/lib/depot/
+src/lib/init usr/lib/depot/
+src/lib/config usr/lib/depot/
+# src/lib/sign usr/lib/depot/
+# src/lib/update usr/lib/depot/

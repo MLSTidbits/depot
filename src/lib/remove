@@ -14,7 +14,7 @@ function app-info {
 
 }
 
-function remove_package () {
+function remove-package () {
 
     local pkg ver arch destDir firstLetter
 
@@ -120,19 +120,22 @@ arch="${ARCH:-$(dpkg --print-architecture)}"
 pool="${POOL:-alpha}"
 
 version=""
-package=""
+package="$1"
 archs=( "${arch}" )
 
 [[ "$pool" == "alpha" || "$pool" == "library" ]] && poolDir=".depot/pool/$components"
 [[ "$pool" == "flat" ]] && poolDir=".depot/pool/"
 
+shift
+
 while [[ $# -gt 0 ]]; do case "$1" in
     -h|--help               ) echo "$helpInfo"           ; exit 0 ;;
-    -v|--version            ) shift ; version="$1"       ; shift  ;;
-    -a|--arch               ) shift ; archs=( "$1" )     ; shift  ;;
+    -v|--version            ) version="$1"               ; shift  ;;
+    -a|--arch               ) archs=( "$1" )             ; shift  ;;
     -*                      ) app-info error "Unknown option: $1" ;;
-    *                       ) package="$1"               ; shift  ;;
+    *                       ) break                               ;;
 esac ; done
 
-[[ -z "$package" ]] && app-info error "Package name is required. Use --help for usage information."
-[[ -z "$version" ]] && app-info error "Package version is required. Use --help for usage information."
+remove-package "$package $version $arch"
+
+exit 0
