@@ -129,9 +129,9 @@ archs=( "${arch}" )
 shift
 
 while [[ $# -gt 0 ]]; do case "$1" in
-    -h|--help               ) echo "$helpInfo"           ; exit 0 ;;
     -v|--version            ) version="$1"               ; shift  ;;
     -a|--arch               ) archs=( "$1" )             ; shift  ;;
+    -h|--help               ) echo "$helpInfo"           ; exit 0 ;;
     -*                      ) app-info error "Unknown option: $1" ;;
     *                       ) break                               ;;
 esac ; done
