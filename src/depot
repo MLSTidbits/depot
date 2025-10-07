@@ -8,21 +8,12 @@
 # Uncomment the following line to enable debugging
 # set -xou pipefail
 
-function app-info {
-
-    case "$1" in
-        info       ) echo -e "$appTitle - [$1] $2" ;;
-        warning    ) echo -e "$appTitle - [$1] $2" ;;
-        error      ) echo -e "$appTitle - [$1] $2" ; exit 1 ;;
-        *          ) echo -e "$appTitle - [unknown] $2" ;;
-    esac
-
-}
-
 appTitle="depot"
 
 # Change mapfile to /usr/share/doc/depot for production releases
 appVersion="$(cat doc/version 2>/dev/null || echo "unknown")"
+
+verboseLib="/usr/lib/depot/verbose"
 
 copyright="$(cat <<- EOL
 Copyright:
@@ -56,6 +47,17 @@ Options:
                             \`remove\`, \`update\` and \`sign\` commands
 
 $copyright
+
+appTitle="depot"
+
+# Change mapfile to /usr/share/doc/depot for production releases
+appVersion="$(cat doc/version 2>/dev/null || echo "unknown")"
+
+verboseLib="/usr/lib/depot/verbose"
+
+helpInfo="$(cat <<- EOF
+$appTitle - $appVersion - A simple Debian package repository manager.
+U
 EOL
 )"
 
@@ -71,6 +73,6 @@ case "$1" in
     help                    ) echo "$appHelp"                  ; exit 0 ;;
     version|-v|--version    ) echo -e "$appInfo\n\n$copyright" ; exit 0 ;;
     *                       )
-        app-info error "Unknown command: \`$1\`. Use '$0 help' to see available commands."
+        $verboseLib error "Unknown command: \`$1\`. Use '$0 help' to see available commands."
     ;;
 esac

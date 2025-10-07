@@ -2,21 +2,12 @@
 
 # Define local and global configuration for the depot repository.
 
-function app-info {
-
-    case "$1" in
-        info       ) echo -e "$appTitle - [$1] $2" ;;
-        warning    ) echo -e "$appTitle - [$1] $2" ;;
-        error      ) echo -e "$appTitle - [$1] $2" ; exit 1 ;;
-        *          ) echo -e "$appTitle - [unknown] $2" ;;
-    esac
-
-}
-
 appTitle="depot"
 
 # Change mapfile to /usr/share/doc/depot for production releases
 appVersion="$(cat doc/version 2>/dev/null || echo "unknown")"
+
+verboseLib="/usr/lib/depot/verbose"
 
 copyright="$(cat <<- EOL
 Copyright:
@@ -60,7 +51,7 @@ EOF
 )"
 
 [[ ! -d .depot && ! -f ~/.depot/config ]] &&
-app-info error "No repository found. Please run '$0 init' first to create a new repository."
+$verboseLib error "No repository found. Please run '$0 init' first to create a new repository."
 
 [[ $# -eq 0 ]] && { echo "$appHelp" ; exit 0 ; }
 
@@ -78,13 +69,24 @@ while [[ $# -gt 0 ]]; do case "$1" in
                 maintainer.email      ) MAINTAINER_EMAIL="$VALUE" ;;
                 gpg.id                ) GPG_KEY_ID="$VALUE" ;;
                 *                     )
-                    app-info error \
+                    $verboseLib error \
                     "Unknown configuration key: \`$KEY\`. Use '$0 help' to see available options."
                 ;;
+
+function remove-package () {
+
+    local pkg ver arch destDir firstLetter
+
+    pkg="$1"
+    ver="$2"
+    arch="$3"
+
+    [[ -z "$pkg" || -z "$ver" || -z "$arch" ]] &&
+
             esac
             shift
         else
-            app-info error "Invalid argument: \`$1\`. Use '$0 help' to see usage."
+            $verboseLib error "Invalid argument: \`$1\`. Use '$0 help' to see usage."
         fi
     ;;
 esac ; done
@@ -119,6 +121,6 @@ CONFIG_FILE="settings.conf"
     fi
 } 2>/dev/null
 
-app-info info "Configuration updated in $CONFIG_PATH"
+$verboseLib info "Configuration updated in $CONFIG_PATH"
 
 exit 0

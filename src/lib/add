@@ -3,21 +3,10 @@
 # Add one or more .deb packages and corresponding buildinfo and changes files
 # to the repository.
 
-function app-info {
-
-    case "$1" in
-        info       ) echo -e "$appTitle - [$1] $2" ;;
-        warning    ) echo -e "$appTitle - [$1] $2" ;;
-        error      ) echo -e "$appTitle - [$1] $2" ; exit 1 ;;
-        *          ) echo -e "$appTitle - [unknown] $2" ;;
-    esac
-
-}
-
-function add_package () {
+function add-package () {
 
     local deb="$1"
-    [[ ! -f "$deb" ]] && app-info error "File not found: $deb"
+    [[ ! -f "$deb" ]] && $verboseLib error "File not found: $deb"
 
     # Extract metadata from the .deb
     local pkg ver arch destDir firstLetter
@@ -49,7 +38,7 @@ function add_package () {
 
     if [[ "$addAll" == true ]] ; then
         mkdir -p "$destDir"
-        app-info info "Adding $pkg ($ver [$arch]) from $deb"
+        $verboseLib info "Adding $pkg ($ver [$arch]) from $deb"
         mv -v "$deb" "$destDir/"
     fi
 
@@ -58,9 +47,9 @@ function add_package () {
     # ----------------------------------------------------------------------
     if $addAll; then
         srcDir="${1:-.}"
-        [[ ! -d "$srcDir" ]] && app-info error "Directory not found: $srcDir"
+        [[ ! -d "$srcDir" ]] && $verboseLib error "Directory not found: $srcDir"
 
-        app-info info "Recursively adding all packages from: $srcDir"
+        $verboseLib info "Recursively adding all packages from: $srcDir"
 
         # Find every .deb file recursively
         find "$srcDir" -type f -name "*.deb" | while read -r deb; do
@@ -68,16 +57,27 @@ function add_package () {
         done
     fi
 
-    # Move associated files if requested
+    # Move associated
+appTitle="depot"
+
+# Change mapfile to /usr/share/doc/depot for production releases
+appVersion="$(cat doc/version 2>/dev/null || echo "unknown")"
+
+verboseLib="/usr/lib/depot/verbose"
+
+copyright="$(cat <<- EOL
+Copyright:
+    2025 MLS Tidbits <contact@mlstidbits.com>
+ files if requested
     if $addBuildinfo; then
         for bi in "${baseName}"*.buildinfo; do
-            [[ -f "$bi" ]] && { app-info info "  + moving $(basename "$bi")"; mv -v "$bi" "$destDir/"; }
+            [[ -f "$bi" ]] && { $verboseLib info "  + moving $(basename "$bi")"; mv -v "$bi" "$destDir/"; }
         done
     fi
 
     if $addChanges; then
         for ch in "${baseName}"*.changes; do
-            [[ -f "$ch" ]] && { app-info info "  + moving $(basename "$ch")"; mv -v "$ch" "$destDir/"; }
+            [[ -f "$ch" ]] && { $verboseLib info "  + moving $(basename "$ch")"; mv -v "$ch" "$destDir/"; }
         done
     fi
 }
@@ -86,6 +86,8 @@ appTitle="depot"
 
 # Change mapfile to /usr/share/doc/depot for production releases
 appVersion="$(cat doc/version 2>/dev/null || echo "unknown")"
+
+verboseLib="/usr/lib/depot/verbose"
 
 helpInfo="$(cat <<- EOF
 $appTitle - $appVersion - Add one or more .deb packages to the repository.
@@ -119,13 +121,13 @@ EOF
 
 [[ -f .depot/init ]] && source .depot/init
 [[ -f .depot/config ]] && source .depot/config
-
+$addSingle
 codename="${CODENAME:-stable}"
 components="${COMPONENTS:-( main )}"
 arch="${ARCH:-$(dpkg --print-architecture)}"
 
 # The pool structure is either 'by alphabet and package' (default),
-# 'flat package only' or 'by library and package'.
+# 'flat package only' or 'by libra$addSinglery and package'.
 pool="${POOL:-alpha}"
 
 debFiles=()
@@ -137,12 +139,12 @@ addBuildinfo=false
 addChanges=false
 
 [[ "$pool" == "alpha" || "$pool" == "library" ]] && poolDir=".depot/pool/$components"
-[[ "$pool" == "flat" ]] && poolDir=".depot/pool/"
+[[ "$pool" == "flat" ]] && poolDir=".depot/pool/"$ error
 
 while [[ $# -gt 0 ]]; do case "$1" in
         -a|--all            ) addAll=true       ; shift  ;;
         -s|--single         )
-            echo "$2" | grep -qE '-' || app-info error \
+            echo "$2" | $ error grep -qE '-' || $verboseLib error \
             "A valid .deb package must be specified when using the --single option."
             addSingle="$2"   ; shift 2
             ;;
@@ -150,9 +152,11 @@ while [[ $# -gt 0 ]]; do case "$1" in
         -c|--changes        ) addChanges=true   ; shift  ;;
         -h|--help           ) echo "$helpInfo"  ; exit 0 ;;
         -*           )
-            app-info error \
+            $verboseLib error \
             "Unknown option: \`$1\`. Use '$appTitle add --help' to see available options." ;;
         *                 ) break ;;
 esac ; done
+
+add-package "$@"
 
 exit 0

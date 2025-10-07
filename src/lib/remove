@@ -3,17 +3,6 @@
 # Remove one or more .deb packages and corresponding buildinfo and changes files
 # from the repository.
 
-function app-info {
-
-    case "$1" in
-        info       ) echo -e "$appTitle - [$1] $2" ;;
-        warning    ) echo -e "$appTitle - [$1] $2" ;;
-        error      ) echo -e "$appTitle - [$1] $2" ; exit 1 ;;
-        *          ) echo -e "$appTitle - [unknown] $2" ;;
-    esac
-
-}
-
 function remove-package () {
 
     local pkg ver arch destDir firstLetter
@@ -23,7 +12,7 @@ function remove-package () {
     arch="$3"
 
     [[ -z "$pkg" || -z "$ver" || -z "$arch" ]] &&
-    app-info error "Package name, version, and architecture are required."
+    $verboseLib error "Package name, version, and architecture are required."
 
     # Determine directory structure
     case "$pool" in
@@ -45,24 +34,24 @@ function remove-package () {
     local changesFile="$destDir/${pkg}_${ver}_source.changes"
 
     if [[ -f "$debFile" ]]; then
-        app-info info "Removing $debFile"
+        $verboseLib info "Removing $debFile"
         rm -v "$debFile"
     else
-        app-info warning "Deb file not found: $debFile"
+        $verboseLib warning "Deb file not found: $debFile"
     fi
 
     if [[ -f "$buildinfoFile" ]]; then
-        app-info info "Removing $buildinfoFile"
+        $verboseLib info "Removing $buildinfoFile"
         rm -v "$buildinfoFile"
     else
-        app-info warning "Buildinfo file not found: $buildinfoFile"
+        $verboseLib warning "Buildinfo file not found: $buildinfoFile"
     fi
 
     if [[ -f "$changesFile" ]]; then
-        app-info info "Removing $changesFile"
+        $verboseLib info "Removing $changesFile"
         rm -v "$changesFile"
     else
-        app-info warning "Changes file not found: $changesFile"
+        $verboseLib warning "Changes file not found: $changesFile"
     fi
 
     # Clean up empty directories
@@ -129,11 +118,11 @@ archs=( "${arch}" )
 shift
 
 while [[ $# -gt 0 ]]; do case "$1" in
-    -v|--version            ) version="$1"               ; shift  ;;
-    -a|--arch               ) archs=( "$1" )             ; shift  ;;
-    -h|--help               ) echo "$helpInfo"           ; exit 0 ;;
-    -*                      ) app-info error "Unknown option: $1" ;;
-    *                       ) break                               ;;
+    -v|--version            ) version="$1"                  ; shift  ;;
+    -a|--arch               ) archs=( "$1" )                ; shift  ;;
+    -h|--help               ) echo "$helpInfo"              ; exit 0 ;;
+    -*                      ) $verboseLib error "Unknown option: $1" ;;
+    *                       ) break                                  ;;
 esac ; done
 
 remove-package "$package $version $arch"

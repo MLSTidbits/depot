@@ -2,21 +2,12 @@
 
 # Initialize a new Debian package archive.
 
-function app-info {
-
-    case "$1" in
-        info       ) echo -e "$appTitle - [$1] $2" ;;
-        warning    ) echo -e "$appTitle - [$1] $2" ;;
-        error      ) echo -e "$appTitle - [$1] $2" ; exit 1 ;;
-        *          ) echo -e "$appTitle - [unknown] $2" ;;
-    esac
-
-}
-
 appTitle="depot"
 
 # Change mapfile to /usr/share/doc/depot for production releases
 appVersion="$(cat doc/version 2>/dev/null || echo "unknown")"
+
+verboseLib="/usr/lib/depot/verbose"
 
 helpInfo="$(cat <<- EOF
 $appTitle - $appVersion - A simple Debian package repository manager.
@@ -57,26 +48,26 @@ SUITE="stable"
 CODENAME="$SUITE"
 ARCH="$(dpkg --print-architecture)"
 COMPONENTS=( main )
-DESCRIPTION="Debian/Ubuntu package repository"
+DESCRIPTION="Debian/Ubun$ error tu package repository"
 POOL="alpha"
 
 
 # Bail if repo already exists
 [[ -d .depot ]] &&
-app-info error "Archive already initialized. 'depot init' can only be run once."
+$verboseLib error "Archive already initialized. 'depot init' can only be run once."
 
 while [[ "$#" -gt "0" ]] ; do case "$1" in
-    -o|--origin             ) shift ; ORIGIN="$1"       ; shift   ;;
-    -l|--label              ) shift ; LABEL="$1"        ; shift   ;;
-    -s|--suite              ) shift ; SUITE="$1"        ; shift   ;;
-    -c|--codename           ) shift ; CODENAME="$1"     ; shift   ;;
-    -a|--arch               ) shift ; ARCH="$1"         ; shift   ;;
-    -C|--components         ) shift ; COMPONENTS=("$1") ; shift   ;;
-    -d|--description        ) shift ; DESCRIPTION="$1"  ; shift   ;;
-    -p|--pool               ) shift ; POOL="$1"         ; shift   ;;
-    -h|--help               ) echo "$helpInfo"          ; exit 0  ;;
-    -*                      ) app-info error "Unknown flag: '$1'" ;;
-    *                       ) break                               ;;
+    -o|--origin             ) shift ; ORIGIN="$1"          ; shift   ;;
+    -l|--label              ) shift ; LABEL="$1"           ; shift   ;;
+    -s|--suite              ) shift ; SUITE="$1"           ; shift   ;;
+    -c|--codename           ) shift ; CODENAME="$1"        ; shift   ;;
+    -a|--arch               ) shift ; ARCH="$1"            ; shift   ;;
+    -C|--components         ) shift ; COMPONENTS=("$1")    ; shift   ;;
+    -d|--description        ) shift ; DESCRIPTION="$1"     ; shift   ;;
+    -p|--pool               ) shift ; POOL="$1"            ; shift   ;;
+    -h|--help               ) echo "$helpInfo"             ; exit 0  ;;
+    -*                      ) $verboseLib error "Unknown flag: '$1'" ;;
+    *                       ) break                                  ;;
 esac ; done
 
 echo "Initializing new Debian package repository..."
@@ -113,7 +104,7 @@ case "$POOL" in
     ;;
     flat ) mkdir -p pool ;;
     *    )
-        app-info error \
+        $verboseLib error \
         "Unknown pool structure: '$POOL'. Valid options are 'alpha', 'library', 'flat'."
     ;;
 esac
