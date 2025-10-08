@@ -57,18 +57,7 @@ function add-package () {
         done
     fi
 
-    # Move associated
-appTitle="depot"
-
-# Change mapfile to /usr/share/doc/depot for production releases
-appVersion="$(cat doc/version 2>/dev/null || echo "unknown")"
-
-verboseLib="/usr/lib/depot/verbose"
-
-copyright="$(cat <<- EOL
-Copyright:
-    2025 MLS Tidbits <contact@mlstidbits.com>
- files if requested
+    # Move associated files if requested
     if $addBuildinfo; then
         for bi in "${baseName}"*.buildinfo; do
             [[ -f "$bi" ]] && { $verboseLib info "  + moving $(basename "$bi")"; mv -v "$bi" "$destDir/"; }

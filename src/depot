@@ -54,10 +54,6 @@ appTitle="depot"
 appVersion="$(cat doc/version 2>/dev/null || echo "unknown")"
 
 verboseLib="/usr/lib/depot/verbose"
-
-helpInfo="$(cat <<- EOF
-$appTitle - $appVersion - A simple Debian package repository manager.
-U
 EOL
 )"
 
