@@ -116,7 +116,7 @@ components="${COMPONENTS:-( main )}"
 arch="${ARCH:-$(dpkg --print-architecture)}"
 
 # The pool structure is either 'by alphabet and package' (default),
-# 'flat package only' or 'by libra$addSinglery and package'.
+# 'flat package only' or 'by libraries and package'.
 pool="${POOL:-alpha}"
 
 debFiles=()
