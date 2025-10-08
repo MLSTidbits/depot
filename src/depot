@@ -38,7 +38,7 @@ Commands:
     add <package>...        Add one or more .deb packages to the repository
     remove <package>        Remove a package from the repository
     update                  Update the Release and InRelease files
-    sign                    Sign the Release file with GPG
+    key                     Sign the Release file with GPG
     config                  Manage local and global configuration options
     help                    Show this help message
     version                 Show version information
@@ -64,7 +64,7 @@ case "$1" in
     add                     ) shift ; /usr/lib/depot/add "$@"           ;;
     rm                      ) shift ; /usr/lib/depot/remove "$@"        ;;
     update                  ) shift ; /usr/lib/depot/update "$@"        ;;
-    sign                    ) shift ; /usr/lib/depot/sign "$@"          ;;
+    key                     ) shift ; /usr/lib/depot/sign "$@"          ;;
     config                  ) shift ; /usr/lib/depot/config "$@"        ;;
     help                    ) echo "$appHelp"                  ; exit 0 ;;
     version|-v|--version    ) echo -e "$appInfo\n\n$copyright" ; exit 0 ;;
