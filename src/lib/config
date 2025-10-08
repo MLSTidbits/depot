@@ -58,9 +58,8 @@ $verboseLib error "No repository found. Please run '$0 init' first to create a n
 while [[ $# -gt 0 ]]; do case "$1" in
     -l|--local       ) CONFIG_SCOPE="local" ; shift ;;
     -g|--global      ) CONFIG_SCOPE="global" ; shift ;;
-    -k|--gpg-key-id  ) GPG_KEY_ID="$2" ; shift 2 ;;
     -h|--help        ) echo "$appHelp" ; exit 0 ;;
-    *               )
+    *                )
         if [[ "$1" == *=* ]]; then
             KEY="${1%%=*}"
             VALUE="${1#*=}"
@@ -72,21 +71,11 @@ while [[ $# -gt 0 ]]; do case "$1" in
                     $verboseLib error \
                     "Unknown configuration key: \`$KEY\`. Use '$0 help' to see available options."
                 ;;
-
-function remove-package () {
-
-    local pkg ver arch destDir firstLetter
-
-    pkg="$1"
-    ver="$2"
-    arch="$3"
-
-    [[ -z "$pkg" || -z "$ver" || -z "$arch" ]] &&
-
             esac
             shift
         else
-            $verboseLib error "Invalid argument: \`$1\`. Use '$0 help' to see usage."
+            $verboseLib error \
+            "Invalid argument: \`$1\`. Use '$0 help' to see available options."
         fi
     ;;
 esac ; done
