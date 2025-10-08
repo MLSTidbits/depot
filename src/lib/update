@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+
+# `update` Updates the package database and Release files of a Debian package repository.
+
