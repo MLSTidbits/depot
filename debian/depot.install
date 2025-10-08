@@ -3,5 +3,5 @@ src/lib/remove usr/lib/depot/
 src/lib/add usr/lib/depot/
 src/lib/init usr/lib/depot/
 src/lib/config usr/lib/depot/
-# src/lib/sign usr/lib/depot/
+src/lib/key usr/lib/depot/
 # src/lib/update usr/lib/depot/
