@@ -1,0 +1,92 @@
+#!/usr/bin/env bash
+
+# `sign` Creates a GPG key and/or signs the Release file in a Debian package repository.
+
+function generate-key () {
+
+    local name="${1:-$(whoami)}"
+    local email="${2:-$realName@$(hostname)}"
+    local comment="${4:-Key for $2}"
+    local expires="${5:-365}"
+    local keyLength="${3:-2048}"
+
+    # shellcheck disable=SC2155
+    local batchFile="$(mktemp)"
+
+    # Check if a GPG key already exists
+    if gpg --list-keys "$email" &>/dev/null; then
+        $verboseLib info "GPG key for $email already exists. Skipping key generation."
+        return
+    fi
+
+    # Verify that the key length is a valid number
+    if ! [[ "$keyLength" =~ ^[0-9]+$ ]] || (( keyLength < 2048 )) ; then
+        $verboseLib error "Invalid key length: $keyLength. It must be a number >= 2048."
+    fi
+
+    (( keyLength > 8192 )) && $verboseLib warning "Key length too long."
+
+    (( expires > 3600 )) && $verboseLib warning "Expiration period too long."
+
+    $verboseLib info "Generating new GPG key for $realName"
+
+    # Create a batch file for GPG key generation
+    local batchFile
+    batchFile=$(mktemp)
+    cat > "$batchFile" <<- EOF
+        %no-protection
+        Key-Type: default
+        Key-Length: 2048
+        Subkey-Length: 2048
+        Subkey-Type: default
+        Name-Real: $realName
+        Name-Email: $email
+        Name-Comment: $comment
+        Expire-Date: ${expires}d
+        %commit
+EOF
+
+    # Generate the GPG key
+    gpg --gen-key --batch "$batchFile"
+
+    # Clean up
+    rm -f "$batchFile"
+
+    $verboseLib info "GPG key generation completed."
+}
+
+# Uncomment the following line to enable debugging
+# set -xou pipefail
+
+appTitle="depot"
+appVersion="$(cat doc/version 2>/dev/null || echo "unknown")"
+
+verboseLib="/usr/lib/depot/verbose"
+
+helpInfo="$(cat <<- EOF
+$appTitle - $appVersion - A simple Debian package repository manager.
+Usage: $0 sign <command> [<args>]
+
+Options:
+    -r, --real-name <name>          Real name for the GPG key
+    -e, --email <email>             Email address for the GPG key
+    -l, --length <length>           Key length for the GPG key (default: 2048)
+    -c, --comment <comment>         Comment for the GPG key
+        --expire <days>             Expiration period for the GPG key in days (0 for never)
+    -h, --help                      Show this help message for \`sign\` command
+EOF
+)"
+
+while [[ $# -gt 0 ]] ; do case $1 in
+    -r|--real-name                  ) realName="$2"    ; shift 2 ;;
+    -e|--email                      ) email="$2"       ; shift 2 ;;
+    -l|--length                     ) keyLength="$2"   ; shift 2 ;;
+    -c|--comment                    ) comment="$2"     ; shift 2 ;;
+    --expire                        ) expireDays="$2"  ; shift 2 ;;
+    -h|--help                       ) echo "$helpInfo" ; exit 0  ;;
+    *) break ;;
+esac ; done
+
+generate-key "$realName" "$email" "$comment" "$expireDays"
+
+exit 0
