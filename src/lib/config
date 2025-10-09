@@ -28,15 +28,15 @@ $appInfo
 Usage: $appTitle config <flags> [options] arg...
 
 Flags:
-    -l, --local         Set configuration for the current repository only (default).
-    -g, --global        Set configuration globally for the user (in ~/.depot/config).
-    -k, --gpg-key-id    The GPG key ID to use for signing
-    -h, --help          Show this help message and exit.
+    -l, --local                     Set configuration for the current repository only (default).
+    -g, --global                    Set configuration globally for the user (in ~/.depot/config).
+    -k, --gpg-key-id                The GPG key ID to use for signing
+    -h, --help                      Show this help message and exit.
 
 Options:
-    maintainer.name        The name of the package maintainer.
-    maintainer.email       The email address of the package maintainer.
-    gpg.id                 The GPG key ID to use for signing the Release file.
+    maintainer.name                 The name of the package maintainer.
+    maintainer.email                The email address of the package maintainer.
+    gpg.id                          The GPG key ID to use for signing the Release file.
 
 Examples:
     $appTitle config --local gpg.id ABCDEF12

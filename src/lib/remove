@@ -77,9 +77,9 @@ $appTitle - $appVersion - A simple Debian package repository manager.
 Usage: $appTitle remove <package>
 
 Options:
-    -v, --version       The version of the package to remove.
-    -a, --arch          The architecture of the package to remove.
-    -h, --help          Show this help message and exit.
+    -v, --version                   The version of the package to remove.
+    -a, --arch                      The architecture of the package to remove.
+    -h, --help                      Show this help message and exit.
 
 Example:
     $appTitle remove <my-package> --version "1.0.0"

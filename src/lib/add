@@ -83,11 +83,11 @@ $appTitle - $appVersion - Add one or more .deb packages to the repository.
 Usage: $appTitle add [options] <package>...
 
 Options:
-    -a, --all           Add all .deb packages.
-    -s, --single        Add a single .deb package (default).
-    -b, --buildinfo     Also add the corresponding .buildinfo file if it exists.
-    -c, --changes       Also add the corresponding .changes file if it exists.
-    -h, --help          Show this help message and exit.
+    -a, --all                       Add all .deb packages.
+    -s, --single                    Add a single .deb package (default).
+    -b, --buildinfo                 Also add the corresponding .buildinfo file if it exists.
+    -c, --changes                   Also add the corresponding .changes file if it exists.
+    -h, --help                      Show this help message and exit.
 
 Examples:
     $appTitle add --all ../
