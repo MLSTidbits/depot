@@ -140,10 +140,10 @@ while [[ $# -gt 0 ]]; do case "$1" in
         -b|--buildinfo      ) addBuildinfo=true ; shift  ;;
         -c|--changes        ) addChanges=true   ; shift  ;;
         -h|--help           ) echo "$helpInfo"  ; exit 0 ;;
-        -*           )
+        -*                  )
             $verboseLib error \
             "Unknown option: \`$1\`. Use '$appTitle add --help' to see available options." ;;
-        *                 ) break ;;
+        *                   ) break ;;
 esac ; done
 
 add-package "$@"

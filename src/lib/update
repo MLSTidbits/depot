@@ -2,3 +2,139 @@
 
 # `update` Updates the package database and Release files of a Debian package repository.
 
+function do-hash () {
+
+    local name=$1
+    local command=$2
+
+    echo "${name}:"
+
+    find ./main -type f | while read -r f ; do
+        f=$(echo "${f}" | cut -c3-)
+        test "${f}" != "Release" || continue
+        echo " $(${command} "${f}"  | cut -d" " -f1) $(wc -c "${f}")"
+    done
+
+}
+
+function update-database () {
+
+    local baseDir="${PWD}"
+    local releaseFile="${baseDir}/main/Release"
+    local tempFile
+    local gpgCmd
+
+    tempFile=$(mktemp)
+
+    # Check if the Release file exists
+    if [[ ! -f "${releaseFile}" ]]; then
+        echo "Release file not found in ${baseDir}/main. Please run 'depot init' first."
+        return 1
+    fi
+
+    {
+        echo "Origin: ${_origin}"
+        echo "Label: ${_label}"
+        echo "Suite: ${_suite}"
+        echo "Codename: ${_codename}"
+        echo "Date: $(date -R)"
+        echo "Architectures: ${_arch}"
+        echo "Components: ${_components}"
+        echo "Description: ${_description}"
+        do-hash "MD5Sum" "md5sum"
+        do-hash "SHA1" "sha1sum"
+        do-hash "SHA256" "sha256sum"
+    } > "${tempFile}"
+
+    if [[ "${DRY_RUN:-false}" == true ]]; then
+        echo "Dry run mode enabled. The following would be written to the Release file:"
+        cat "${tempFile}"
+        rm -f "${tempFile}"
+        return 0
+    fi
+
+    mv "${tempFile}" "${releaseFile}"
+    echo "Updated Release file at ${releaseFile}"
+
+    if [[ "${SIGN:-false}" == true || -n "${_key}" ]]; then
+        gpgCmd="gpg --default-key ${_key} --output ${baseDir}/main/InRelease --clearsign --digest-algo SHA256 ${releaseFile}"
+        if [[ "${DRY_RUN:-false}" == true ]]; then
+            echo "Dry run mode enabled. The following GPG command would be executed:"
+            echo "${gpgCmd}"
+            return 0
+        fi
+        eval "${gpgCmd}"
+        echo "Signed Release file and created InRelease at ${baseDir}/main/InRelease"
+    fi
+
+    return 0
+}
+
+# Uncomment for debugging
+#set -xou pipefail
+
+appName="depot"
+appVersion="$(cat /usr/share/doc/depot/version 2>/dev/null || echo "unknown")"
+
+verboseLib="/usr/lib/depot/verbose"
+
+[[ ! -d .depot ]] &&
+$verboseLib error "No repository found. Please run '$0 init' first to create a new repository."
+
+# Load configuration
+source .depot/config ||
+$verboseLib error "Failed to load configuration from .depot/config"
+
+# Settings from configuration can either global or local; the local settings override global
+if [[ -f ~/.depot/settings.conf ]]; then
+    source ~/.depot/settings.conf ||
+    $verboseLib error "Failed to load global configuration from ~/.depot/settings.conf"
+elif [[ ! -f ~/.depot/settings.conf && -f .depot/settings.conf ]] ; then
+    source .depot/settings.conf ||
+    $verboseLib error "Failed to load local configuration from .depot/settings.conf"
+else
+    $verboseLib error \
+    "No settings.conf file found. Please run '$0 config' to set up the repository settings."
+fi
+
+
+appInfo="$(cat <<- EOL
+$appName - $appVersion - Update the package database and Release files.
+Usage: $appName update
+
+Options:
+    -d, --dry-run               Show what would be done without making any changes.
+    -s, --sign                  Sign the Release file with GPG: This is the default
+                                if GPG_KEY_ID is set.
+    --description               Update the description field in the Release file.
+    -h, --help                  Show this help message and exit.
+
+Examples:
+    $appName update
+    $appName update --dry-run
+    $appName update --sign
+    $appName update --description "New description for the repository"
+
+Note:
+    The update command should be run after adding or removing packages to ensure
+    the package database and Release files are current.
+
+Copyright:
+    2025 MLS Tidbits <contact@mlstidbits.com>
+    2025 Michael Schaecher <michaelschaecher@mlstidbits.com>
+License:
+    GPLv3+ as published by the Free Software Foundation all rights reserved.
+EOL
+)"
+
+while [[ $# -gt 0 ]]; do case "$1" in
+    -d|--dry-run            ) DRY_RUN=true ; shift ;;
+    -s|--sign               ) SIGN=true ; shift ;;
+    --description           ) UPDATE_DESCRIPTION=true ; shift ;;
+    -h|--help               ) echo "$appInfo" ; exit 0 ;;
+    *                       ) echo "Unknown option: $1" ; echo "$appInfo" ; exit 1 ;;
+esac ; done
+
+update-database
+
+exit 0

@@ -56,10 +56,10 @@ $verboseLib error "No repository found. Please run '$0 init' first to create a n
 [[ $# -eq 0 ]] && { echo "$appHelp" ; exit 0 ; }
 
 while [[ $# -gt 0 ]]; do case "$1" in
-    -l|--local       ) CONFIG_SCOPE="local" ; shift ;;
-    -g|--global      ) CONFIG_SCOPE="global" ; shift ;;
-    -h|--help        ) echo "$appHelp" ; exit 0 ;;
-    *                )
+    -l|--local              ) CONFIG_SCOPE="local" ; shift ;;
+    -g|--global             ) CONFIG_SCOPE="global" ; shift ;;
+    -h|--help               ) echo "$appHelp" ; exit 0 ;;
+    *                       )
         if [[ "$1" == *=* ]]; then
             KEY="${1%%=*}"
             VALUE="${1#*=}"

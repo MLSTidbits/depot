@@ -36,8 +36,15 @@ Examples:
     $appTitle init --origin "My Company" --suite "focal" --components "main contrib non-free"
     $appTitle init --origin "My Company" --suite "focal" --arch "amd64 arm64"
 
-Note: The init command can only be run once per repository. Running it again will
-result in an error (unless you delete the .depot directory first)
+Note:
+    The init command can only be run once per repository. Running it again will
+    result in an error (unless you delete the .depot directory first)
+
+Copyright:
+    2025 MLS Tidbits <contact@mlstidbits.com>
+    2025 Michael Schaecher <michaelschaecher@mlstidbits.com>
+License:
+    GPLv3+ as published by the Free Software Foundation all rights reserved.
 EOF
 )"
 
@@ -96,14 +103,14 @@ for comp in "${COMPONENTS[@]}"; do
 done
 
 case "$POOL" in
-    alpha|library)
+    alpha|library           )
         for a in {a..z} ; do
             [[ "$POOL" == "library" ]] && mkdir -p "pool/${COMPONENTS[*]}/lib${a}"
             [[ "$POOL" == "alpha" ]] && mkdir -p "pool/${COMPONENTS[*]}/${a}"
         done
     ;;
-    flat ) mkdir -p pool ;;
-    *    )
+    flat                    ) mkdir -p pool ;;
+    *                       )
         $verboseLib error \
         "Unknown pool structure: '$POOL'. Valid options are 'alpha', 'library', 'flat'."
     ;;

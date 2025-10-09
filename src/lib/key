@@ -74,17 +74,26 @@ Options:
     -c, --comment <comment>         Comment for the GPG key
         --expire <days>             Expiration period for the GPG key in days (0 for never)
     -h, --help                      Show this help message for \`sign\` command
+
+Examples:
+    $appTitle sign --real-name "John Doe" --email "johndoe@email.com"
+
+Copyright:
+    2025 MLS Tidbits <contact@mlstidbits.com>
+    2025 Michael Schaecher <michaelschaecher@mlstidbits.com>
+License:
+    GPLv3+ as published by the Free Software Foundation all rights reserved.
 EOF
 )"
 
 while [[ $# -gt 0 ]] ; do case $1 in
-    -r|--real-name                  ) realName="$2"    ; shift 2 ;;
-    -e|--email                      ) email="$2"       ; shift 2 ;;
-    -l|--length                     ) keyLength="$2"   ; shift 2 ;;
-    -c|--comment                    ) comment="$2"     ; shift 2 ;;
-    --expire                        ) expireDays="$2"  ; shift 2 ;;
-    -h|--help                       ) echo "$helpInfo" ; exit 0  ;;
-    *) break ;;
+    -r|--real-name          ) realName="$2"    ; shift 2 ;;
+    -e|--email              ) email="$2"       ; shift 2 ;;
+    -l|--length             ) keyLength="$2"   ; shift 2 ;;
+    -c|--comment            ) comment="$2"     ; shift 2 ;;
+    --expire                ) expireDays="$2"  ; shift 2 ;;
+    -h|--help               ) echo "$helpInfo" ; exit 0  ;;
+    *                       ) break                      ;;
 esac ; done
 
 generate-key "$realName" "$email" "$comment" "$expireDays"
