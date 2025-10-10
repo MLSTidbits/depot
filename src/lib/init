@@ -55,7 +55,7 @@ SUITE="stable"
 CODENAME="$SUITE"
 ARCH="$(dpkg --print-architecture)"
 COMPONENTS=( main )
-DESCRIPTION="Debian/Ubun$ error tu package repository"
+DESCRIPTION="Debian/Ubuntu error tu package repository"
 POOL="alpha"
 
 
