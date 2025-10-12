@@ -2,3 +2,4 @@ man/depot.1.md
 man/depot-init.1.md
 man/depot-config.1.md
 man/depot-key.1.md
+man/depot-remove.1.md

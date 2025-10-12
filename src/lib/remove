@@ -7,9 +7,9 @@ function remove-package () {
 
     local pkg ver arch destDir firstLetter
 
-    pkg="$1"
-    ver="$2"
-    arch="$3"
+    ver="$1"
+    arch="$2"
+    pkg="$3"
 
     [[ -z "$pkg" || -z "$ver" || -z "$arch" ]] &&
     $verboseLib error "Package name, version, and architecture are required."
@@ -111,7 +111,7 @@ arch="${ARCH:-$(dpkg --print-architecture)}"
 pool="${POOL:-alpha}"
 
 version=""
-package="$1"
+package=""
 archs=( "${arch}" )
 
 [[ "$pool" == "alpha" || "$pool" == "library" ]] && poolDir=".depot/pool/$components"
@@ -124,9 +124,9 @@ while [[ $# -gt 0 ]]; do case "$1" in
     -a|--arch               ) archs=( "$1" )                ; shift  ;;
     -h|--help               ) echo "$helpInfo"              ; exit 0 ;;
     -*                      ) $verboseLib error "Unknown option: $1" ;;
-    *                       ) break                                  ;;
+    *                       ) package="$1"                  ; break  ;;
 esac ; done
 
-remove-package "$package $version $arch"
+remove-package "$version $arch $package"
 
 exit 0
