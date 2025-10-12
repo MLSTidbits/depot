@@ -30,7 +30,6 @@ Usage: $appTitle config <flags> [options] arg...
 Flags:
     -l, --local                     Set configuration for the current repository only (default).
     -g, --global                    Set configuration globally for the user (in ~/.depot/config).
-    -k, --gpg-key-id                The GPG key ID to use for signing
     -h, --help                      Show this help message and exit.
 
 Options:
