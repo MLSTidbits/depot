@@ -51,8 +51,4 @@ If the repository is hosted on a web server, ensure that the server is configure
 
 # LICENSE
 
-This software is licensed under the GPLv3.0+ license or greater:
-    copyright (C) 2025 Michael Schaecher <michaelleeschaecher@mlstidbits.com>
-    copyright (C) 2025 MLS Tidbits <contact@mlstidbits.com>
-
-You should have received a copy of the GNU General Public License along with this program. If not, see <https://www.gnu.org/licenses/>.
+This software is licensed under the GPLv3.0+ license or greater all rights reserved.
