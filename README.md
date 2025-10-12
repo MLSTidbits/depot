@@ -160,4 +160,4 @@ Contributions are welcome! If you find a bug or have a feature request, please o
 
 ## LICENSE
 
-Depot is licensed under the GPL-3.0+ License. See the [LICENSE](LICENSE) file for more information.
+Depot is licensed under the GPL-3.0+ License. See the [LICENSE](COPYING) file for more information.
