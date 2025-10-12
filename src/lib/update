@@ -14,7 +14,7 @@ function update-database () {
     apt-ftparchive packages pool > "$tempFile" || $verboseLib error "Failed to rebuild the Packages file"
 
     if [[ "$DRY_RUN" == true ]]; then
-        echo "Dry run mode enabled. The following would be written to the Packages file:"
+        $verboseLib info "Dry run mode enabled. The following would be written to the Packages file:"
         cat "$tempFile"
         rm -f "$tempFile"
         return 0
@@ -38,21 +38,28 @@ function update-database () {
     $verboseLib error "Failed to generate Release file content"
 
     if [[ "${DRY_RUN:-false}" == true ]]; then
-        echo "Dry run mode enabled. The following would be written to the Release file:"
+        $verboseLib info "Dry run mode enabled. The following would be written to the Release file:"
         cat "${tempFile}"
         rm -f "${tempFile}"
-        return 0
     fi
 
     mv "${tempFile}" "${releaseFile}"
     $verboseLib info "Updated Release file at ${releaseFile}"
 
-    if [[ "${SIGN:-false}" == true || -n "${_key}" ]]; then
-        gpgCmd="gpg --default-key ${_key} --output ${baseDir}/main/InRelease --clearsign --digest-algo SHA256 ${releaseFile}"
+    releaseGPG="${baseDir}/$suite/Release.gpg"
+    inRelease="${baseDir}/$suite/InRelease"
+
+    if [[ "$SIGN" == true || -n "$key" ]]; then
+        gpgCmd="gpg --default-key $key --output $releaseGPG --detach-sign $releaseFile"
         if [[ "${DRY_RUN:-false}" == true ]]; then
-            echo "Dry run mode enabled. The following GPG command would be executed:"
-            echo "${gpgCmd}"
-            return 0
+            $verboseLib info "Dry run mode enabled. The following GPG command would be executed:"
+            $verboseLib info "${gpgCmd}"
+        fi
+        eval "${gpgCmd}"
+        gpgCmd="gpg --default-key $key --output $inRelease --clearsign --digest-algo SHA256 $releaseFile"
+        if [[ "$DRY_RUN" == true ]]; then
+            $verboseLib info "Dry run mode enabled. The following GPG command would be executed:"
+            $verboseLib info "${gpgCmd}"
         fi
         eval "${gpgCmd}"
         echo "Signed Release file and created InRelease at ${baseDir}/main/InRelease"
@@ -99,6 +106,9 @@ description="${DESCRIPTION:-"Debian/Ubuntu package repository"}"
 key="${GPG_KEY_ID:-""}"
 maintainer="${MAINTAINER_NAME <$(whoami) <$(whoami)@$(hostname)>}"
 
+DRY_RUN=false
+SIGN=false
+
 appInfo="$(cat <<- EOL
 $appName - $appVersion - Update the package database and Release files.
 Usage: $appName update
@@ -107,7 +117,7 @@ Options:
     -d, --dry-run                   Show what would be done without making any changes.
     -s, --sign                      Sign the Release file with GPG: This is the default
                                     if GPG_KEY_ID is set.
-    --description                   Update the description field in the Release file.
+    -D, --description DSC..         Update the description field in the Release file.
     -h, --help                      eShow this help message and exit.
 
 Examples:
@@ -129,12 +139,12 @@ EOL
 )"
 
 while [[ $# -gt 0 ]]; do case "$1" in
-    -d|--dry-run            ) DRY_RUN=true                  ; shift  ;;
-    -s|--sign               ) SIGN=true                     ; shift  ;;
-    --description           ) UPDATE_DESCRIPTION=true       ; shift  ;;
-    -h|--help               ) echo "$appInfo"               ; exit 0 ;;
-    -*                      ) $verboseLib error "Unknown option: $1" ;;
-    *                       ) break                                  ;;
+    -d|--dry-run            ) DRY_RUN=true                  ; shift   ;;
+    -s|--sign               ) SIGN=true                     ; shift   ;;
+    -D|--description        ) description="$2"              ; shift 2 ;;
+    -h|--help               ) echo "$appInfo"               ; exit 0  ;;
+    -*                      ) $verboseLib error "Unknown option: $1"  ;;
+    *                       ) break                                   ;;
 esac ; done
 
 update-database
