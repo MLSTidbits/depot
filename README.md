@@ -1,7 +1,7 @@
 <div align="center">
  <image
-  src="images/logo.png"
-  alt="HealthGPT Logo"
+  src="images/logo.svg"
+  alt="Depot Logo"
   width=auto
   height=512px
   />
