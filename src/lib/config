@@ -1,114 +1,125 @@
 #!/usr/bin/env bash
+# depot-config — Manage maintainer and GPG configuration for a depot repository.
 
-# Define local and global configuration for the depot repository.
+# ────────────────────────────────────────────────
+# Update configuration safely
+# ────────────────────────────────────────────────
+function update-conf () {
+    local key="$1" val="$2"
+    local pattern="^$key="
+
+    [[ -z "$val" ]] && return 0
+
+    if grep -qE "$pattern" "$CONFIG_PATH"; then
+        sed -i "s|$pattern.*|$key=\"$val\"|" "$CONFIG_PATH"
+    else
+        echo "$key=\"$val\"" >> "$CONFIG_PATH"
+    fi
+
+}
+
+# Uncomment for debugging
+#set -xuo pipefail
 
 appTitle="depot"
-
-# Change mapfile to /usr/share/doc/depot for production releases
 appVersion="$(cat doc/version 2>/dev/null || echo "unknown")"
-
 verboseLib="/usr/lib/depot/verbose"
 
-copyright="$(cat <<- EOL
+appInfo="$appTitle - $appVersion - Add/Modify maintainer and GPG signing configuration."
+
+appHelp="$(cat <<- EOF
+$appInfo
+
+Usage: $appTitle config [--local|--global] <key>=<value> ...
+
+Flags:
+    -l, --local             Apply configuration to the current repository (default)
+    -g, --global            Apply configuration globally (~/.depot/settings.conf)
+    -h, --help              Show this help message and exit
+
+Options:
+    maintainer.name         The name of the package maintainer
+    maintainer.email        The email address of the maintainer
+    gpg.id                  The GPG key ID used for signing
+
+Examples:
+    $appTitle config --local  gpg.id=ABCDEF12
+    $appTitle config --global maintainer.email=john@example.com
+    $appTitle config maintainer.name="John Doe"
+
+Notes:
+    The config command can be run multiple times to update individual fields.
+
 Copyright:
     2025 MLS Tidbits <contact@mlstidbits.com>
     2025 Michael Schaecher <michaelschaecher@mlstidbits.com>
 License:
-    GPLv3+ as published by the Free Software Foundation all rights reserved.
-EOL
-)"
+    GPLv3+ as published by the Free Software Foundation. All rights reserved.
 
-appInfo="$(cat <<- EOL
-$appTitle - $appVersion - Add/Modify maintainer and GPG signing configuration.
-EOL
-)"
-
-appHelp="$(cat <<- EOF
-$appInfo
-Usage: $appTitle config <flags> [options] arg...
-
-Flags:
-    -l, --local                     Set configuration for the current repository only (default).
-    -g, --global                    Set configuration globally for the user (in ~/.depot/config).
-    -h, --help                      Show this help message and exit.
-
-Options:
-    maintainer.name                 The name of the package maintainer.
-    maintainer.email                The email address of the package maintainer.
-    gpg.id                          The GPG key ID to use for signing the Release file.
-
-Examples:
-    $appTitle config --local gpg.id ABCDEF12
-    $appTitle config --global gpg.id ABCDEF12
-    $appTitle config --local maintainer.name "John Doe"
-    $appTitle config --global maintainer.email "johndoe@email.com"
-
-Note: The config command can be run multiple times to set or update configuration values.
-
-$copyright
 EOF
 )"
 
-[[ ! -d .depot && ! -f ~/.depot/config ]] &&
-$verboseLib error "No repository found. Please run '$0 init' first to create a new repository."
+# Preflight checks
+if [[ ! -x "$verboseLib" ]]; then
+    echo "Error: verbose library not found at $verboseLib" >&2
+    exit 1
+fi
 
-[[ $# -eq 0 ]] && { echo "$appHelp" ; exit 0 ; }
+[[ $# -eq 0 ]] && { echo "$appHelp"; exit 0; }
 
-while [[ $# -gt 0 ]]; do case "$1" in
-    -l|--local              ) CONFIG_SCOPE="local" ; shift ;;
-    -g|--global             ) CONFIG_SCOPE="global" ; shift ;;
-    -h|--help               ) echo "$appHelp" ; exit 0 ;;
-    *                       )
-        if [[ "$1" == *=* ]]; then
-            KEY="${1%%=*}"
-            VALUE="${1#*=}"
-            case "$KEY" in
-                maintainer.name       ) MAINTAINER_NAME="$VALUE" ;;
-                maintainer.email      ) MAINTAINER_EMAIL="$VALUE" ;;
-                gpg.id                ) GPG_KEY_ID="$VALUE" ;;
-                *                     )
-                    $verboseLib error \
-                    "Unknown configuration key: \`$KEY\`. Use '$0 help' to see available options."
-                ;;
-            esac
+MAINTAINER_NAME=""
+MAINTAINER_EMAIL=""
+GPG_KEY_ID=""
+
+while [[ "$#" -gt "0" ]] ; do case "$1" in
+        -l|--local              ) CONFIG_SCOPE="local"                   ; shift  ;;
+        -g|--global             )
+            CONFIG_SCOPE="global" ; mkdir -p "$HOME/.depot"
             shift
-        else
-            $verboseLib error \
-            "Invalid argument: \`$1\`. Use '$0 help' to see available options."
-        fi
-    ;;
+        ;;
+        -h|--help               ) echo "$appHelp"                        ; exit 0 ;;
+        *)
+            [[ -z "$CONFIG_SCOPE" ]] && $verboseLib error "You must specify either --local or --global."
+
+            [[ "$1" != *"\ "* ]] && $verboseLib error "Invalid argument format: '$1'. Use <key> <value>."
+
+            for pair in "$@" ; do
+
+                VALUE="$2"
+
+                case "$pair" in
+                    maintainer.name ) MAINTAINER_NAME="$VALUE"                    ;;
+                    maintainer.email) MAINTAINER_EMAIL="$VALUE"                   ;;
+                    gpg.id          ) GPG_KEY_ID="$VALUE"                         ;;
+                    *               )
+                        $verboseLib error "Unknown configuration key: '$1'"
+                    ;;
+                esac
+
+            done
+
+            break
+        ;;
 esac ; done
 
-# Default to local configuration if no scope is specified
-CONFIG_SCOPE="${CONFIG_SCOPE:-local}"
 CONFIG_FILE="settings.conf"
 
-[[ "$CONFIG_SCOPE" == "local" ]] && CONFIG_PATH=".depot/$CONFIG_FILE"
-[[ "$CONFIG_SCOPE" == "global" ]] && CONFIG_PATH="$HOME/.depot/$CONFIG_FILE"
-
-[[ ! -f "$CONFIG_PATH" ]] && touch "$CONFIG_PATH"
-
-# Update configuration file
-{
-    if [[ -n "$MAINTAINER_NAME"  ]] && grep -qE '^MAINTAINER_NAME=' "$CONFIG_PATH" ; then
-        sed -i "s|^MAINTAINER_NAME=.*|MAINTAINER_NAME=\"$MAINTAINER_NAME\"|" "$CONFIG_PATH"
-    else
-        echo "MAINTAINER_NAME=\"$MAINTAINER_NAME\"" >> "$CONFIG_PATH"
+if [[ "$CONFIG_SCOPE" == "local" ]]; then
+    if [[ ! -d .depot ]]; then
+        "$verboseLib" error "No local repository found. Run '$appTitle init' first."
+        exit 1
     fi
+    CONFIG_PATH=".depot/$CONFIG_FILE"
+else
+    CONFIG_PATH="$HOME/.depot/$CONFIG_FILE"
+fi
 
-    if [[ -n "$MAINTAINER_EMAIL" ]] && grep -qE '^MAINTAINER_EMAIL=' "$CONFIG_PATH" ; then
-        sed -i "s|^MAINTAINER_EMAIL=.*|MAINTAINER_EMAIL=\"$MAINTAINER_EMAIL\"|" "$CONFIG_PATH"
-    else
-        echo "MAINTAINER_EMAIL=\"$MAINTAINER_EMAIL\"" >> "$CONFIG_PATH"
-    fi
+touch "$CONFIG_PATH"
 
-    if [[ -n "$GPG_KEY_ID" ]] && grep -qE '^GPG_ID=' "$CONFIG_PATH" ; then
-        sed -i "s|^GPG_ID=.*|GPG_ID=\"$GPG_KEY_ID\"|" "$CONFIG_PATH"
-    else
-        echo "GPG_ID=\"$GPG_KEY_ID\"" >> "$CONFIG_PATH"
-    fi
-} 2>/dev/null
+update-conf "MAINTAINER_NAME"  "$MAINTAINER_NAME"
+update-conf "MAINTAINER_EMAIL" "$MAINTAINER_EMAIL"
+update-conf "GPG_ID"           "$GPG_KEY_ID"
 
-$verboseLib info "Configuration updated in $CONFIG_PATH"
+"$verboseLib" info "Configuration updated in $CONFIG_PATH"
 
 exit 0
