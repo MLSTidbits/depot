@@ -14,18 +14,18 @@ $appTitle - $appVersion - A simple Debian package repository manager.
 Usage: $appTitle init <flags> arg...
 
 Flags:
-    -o, --origin                    What is the name of the organization or individual
+    -o, --origin <org>              What is the name of the organization or individual
                                     responsible for this repository.
-    -l, --label                     The label field in the Release file.
-    -s, --suite                     This is the codename for the release version, e.g., Focal or Buster.
+    -l, --label <label>             The label field in the Release file.
+    -s, --suite <label>             This is the codename for the release version, e.g., Focal or Buster.
                                     Defaults to 'stable' if not specified.
     -c, --codename                  Set the codename field; this is often the same as suite.
-    -a, --arch                      Set the architectures supported by this repository. Defaults to the
+    -a, --arch <arch,arch2>         Set the architectures supported by this repository. Defaults to the
                                     output of 'dpkg --print-architecture'.
-    -C, --components                Set the components for this repository. Defaults to 'main'. Multiple
+    -C, --components <component>    Set the components for this repository. Defaults to 'main'. Multiple
                                     components can be specified separated by spaces. For example: \`main\`,
                                     \`contrib non-free\`.
-    -p, --pool                      What type of pool structure to use. Options are 'by alphabet and package'
+    -p, --pool <structure>          What type of pool structure to use. Options are 'by alphabet and package'
                                     (default), 'by package', by library and package', or 'flat'.
     -d, --description               A short description of the repository.
     -h, --help                      Show this help message and exit.
