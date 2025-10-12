@@ -56,7 +56,7 @@ function update-database () {
             $verboseLib info "${gpgCmd}"
         fi
         eval "${gpgCmd}"
-        gpgCmd="gpg --default-key $key --output $inRelease --clearsign --digest-algo SHA256 $releaseFile"
+        gpgCmd="gpg --default-key $key --output $inRelease --clearsign $releaseFile"
         if [[ "$DRY_RUN" == true ]]; then
             $verboseLib info "Dry run mode enabled. The following GPG command would be executed:"
             $verboseLib info "${gpgCmd}"
