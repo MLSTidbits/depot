@@ -5,7 +5,6 @@
 function update-database () {
 
     local baseDir="${PWD}"
-    local releaseFile="${baseDir}/$suite/Release"
     local tempFile
     local gpgCmd
 
@@ -17,11 +16,21 @@ function update-database () {
         $verboseLib info "Dry run mode enabled. The following would be written to the Packages file:"
         cat "$tempFile"
         rm -f "$tempFile"
-        return 0
+    else
+        mv "$tempFile" "${baseDir}/$suite/$components/binary-$arch/Packages"
+        $verboseLib info "Updated Packages file at ${baseDir}/$suite/$components/binary-$arch/Packages"
     fi
 
-    mv "$tempFile" "${baseDir}/$suite/$components/binary-$arch/Packages"
-    $verboseLib info "Updated Packages file at ${baseDir}/$suite/$components/binary-$arch/Packages"
+    $verboseLib error "Failed to generate Release file content"
+
+    if [[ "$DRY_RUN" == true ]]; then
+        $verboseLib info "Dry run mode enabled. The following would be written to the Release file:"
+        cat "${tempFile}"
+        rm -f "${tempFile}"
+    else
+        mv "${tempFile}" "${releaseFile}"
+        $verboseLib info "Updated Release file at ${releaseFile}"
+    fi
 
     {
         echo "Origin: $origin"
@@ -34,35 +43,40 @@ function update-database () {
         echo "Maintainer: $maintainer"
     } > "${tempFile}"
 
-    apt-ftparchive release "${baseDir}/$suite" >> "${tempFile}" ||
+    apt-ftparchive release "${baseDir}/dists/$suite" >> "${tempFile}" ||
     $verboseLib error "Failed to generate Release file content"
 
-    if [[ "${DRY_RUN:-false}" == true ]]; then
+    local releaseFile="${baseDir}/$suite/Release"
+
+    local releaseGPG="${baseDir}/$suite/Release.gpg"
+    local inRelease="${baseDir}/$suite/InRelease"
+
+    if [[ "$DRY_RUN" == true ]]; then
         $verboseLib info "Dry run mode enabled. The following would be written to the Release file:"
         cat "${tempFile}"
         rm -f "${tempFile}"
+    else
+        mv "${tempFile}" "${releaseFile}"
+        $verboseLib info "Updated Release file at ${releaseFile}"
     fi
-
-    mv "${tempFile}" "${releaseFile}"
-    $verboseLib info "Updated Release file at ${releaseFile}"
-
-    releaseGPG="${baseDir}/$suite/Release.gpg"
-    inRelease="${baseDir}/$suite/InRelease"
 
     if [[ "$SIGN" == true || -n "$key" ]]; then
         gpgCmd="gpg --default-key $key --output $releaseGPG --detach-sign $releaseFile"
-        if [[ "${DRY_RUN:-false}" == true ]]; then
+        if [[ "$DRY_RUN" == true ]]; then
             $verboseLib info "Dry run mode enabled. The following GPG command would be executed:"
             $verboseLib info "${gpgCmd}"
+        else
+            eval "${gpgCmd}" 2> /dev/null
+            $verboseLib info "Signed Release file and created detached signature at ${baseDir}/main/Release.gpg"
         fi
-        eval "${gpgCmd}"
         gpgCmd="gpg --default-key $key --output $inRelease --clearsign $releaseFile"
         if [[ "$DRY_RUN" == true ]]; then
             $verboseLib info "Dry run mode enabled. The following GPG command would be executed:"
             $verboseLib info "${gpgCmd}"
+        else
+            eval "${gpgCmd}" 2> /dev/null
+            $verboseLib info "Signed Release file and created InRelease at ${baseDir}/main/InRelease"
         fi
-        eval "${gpgCmd}"
-        echo "Signed Release file and created InRelease at ${baseDir}/main/InRelease"
     fi
 
     return 0
@@ -103,8 +117,8 @@ codename="${CODENAME:-$suite}"
 arch="${ARCH:-$(dpkg --print-architecture)}"
 components="${COMPONENTS[*]:-"main"}"
 description="${DESCRIPTION:-"Debian/Ubuntu package repository"}"
-key="${GPG_KEY_ID:-""}"
-maintainer="${MAINTAINER_NAME <$(whoami) <$(whoami)@$(hostname)>}"
+key="${GPG_ID:-""}"
+maintainer="${MAINTAINER_NAME <$MAINTAINER_EMAIL>:-"$USER <$USER@$(hostname)>"}"
 
 DRY_RUN=false
 SIGN=false
