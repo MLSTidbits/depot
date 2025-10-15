@@ -1,5 +1,6 @@
 # shellcheck disable=SC2148
-_depot_completion() {
+# shellcheck disable=SC2148
+_depot_completion () {
     local cur prev cmd
     cur="${COMP_WORDS[COMP_CWORD]}"
     prev="${COMP_WORDS[COMP_CWORD-1]}"
@@ -14,45 +15,54 @@ _depot_completion() {
     local rm_opts="-v --version -a --arch -h --help"
     local update_opts="-d --dry-run -s --sign -D --description -h --help"
 
-    # If completing the first argument (after `depot`), show commands
+    # First word after `depot`
     if [[ $COMP_CWORD -eq 1 ]]; then
         mapfile -t COMPREPLY < <(compgen -W "$commands" -- "$cur")
         return
     fi
 
-    # Detect which subcommand we’re completing options for
+    # Detect subcommand
     case "$cmd" in
-        init                            )
+        init)
             mapfile -t COMPREPLY < <(compgen -W "$init_opts" -- "$cur")
         ;;
-        config                          )
-            # Handle sub-options based on previous word
+        config)
             case "$prev" in
-                config                  )
+                config)
                     mapfile -t COMPREPLY < <(compgen -W "$config_opts" -- "$cur")
                 ;;
-                -l|--local|-g|--global  )
+                -l|--local|-g|--global)
                     mapfile -t COMPREPLY < <(compgen -W "maintainer.name maintainer.email gpg.id" -- "$cur")
+                ;;
+                maintainer.name|maintainer.email|gpg.id)
+                    COMPREPLY=() # no completion for values
                 ;;
             esac
         ;;
-        key                             )
+        key)
             mapfile -t COMPREPLY < <(compgen -W "$key_opts" -- "$cur")
         ;;
-        add                             )
-            mapfile -t COMPREPLY < <(compgen -W "$add_opts" -- "$cur")
+        add)
+            case "$prev" in
+                add)
+                    mapfile -t COMPREPLY < <(compgen -f -- "$cur")
+                    ;;
+                *)
+                    mapfile -t COMPREPLY < <(compgen -W "$add_opts" -- "$cur")
+                    ;;
+            esac
         ;;
-        rm                              )
+        rm)
             mapfile -t COMPREPLY < <(compgen -W "$rm_opts" -- "$cur")
         ;;
-        update                          )
+        update)
             mapfile -t COMPREPLY < <(compgen -W "$update_opts" -- "$cur")
         ;;
-        help|version|-v|--version       )
-            COMPREPLY=()  # no completions
+        help|version|-v|--version)
+            COMPREPLY=()
         ;;
     esac
 }
 
-# Register completion for `depot`
+# Register the completion for `depot`
 complete -F _depot_completion depot

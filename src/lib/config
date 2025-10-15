@@ -60,16 +60,15 @@ EOF
 )"
 
 # Preflight checks
-if [[ ! -x "$verboseLib" ]]; then
-    echo "Error: verbose library not found at $verboseLib" >&2
-    exit 1
-fi
+[[ ! -x "$verboseLib" ]] && { echo "Error: verbose library not found at $verboseLib" >&2 ; exit 1 ;}
 
 [[ $# -eq 0 ]] && { echo "$appHelp"; exit 0; }
 
 MAINTAINER_NAME=""
 MAINTAINER_EMAIL=""
 GPG_KEY_ID=""
+
+/usr/lib/depot/verify-init
 
 while [[ "$#" -gt "0" ]] ; do case "$1" in
         -l|--local              ) CONFIG_SCOPE="local"                   ; shift  ;;

@@ -1,0 +1,15 @@
+#!/usr/bin/env bash
+
+# verify-init — Verify if current directory is a depot repository
+
+verboseLib="/usr/lib/depot/verbose"
+
+[[ ! -f .depot/init ]] && $verboseLib error "Not a depot repository (missing .depot/init)."
+
+if [[ -f $HOME/.depot/config ]] ; then
+    source .depot/config
+elif [[ -f .depot/config ]] ; then
+    source .depot/config
+else
+    $verboseLib error "No configuration found (missing .depot/config or \$HOME/.depot/config)."
+fi

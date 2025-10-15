@@ -58,7 +58,6 @@ COMPONENTS=( main )
 DESCRIPTION="Debian/Ubuntu package repository"
 POOL="alpha"
 
-
 # Bail if repo already exists
 [[ -d .depot ]] &&
 $verboseLib error "Archive already initialized. 'depot init' can only be run once."

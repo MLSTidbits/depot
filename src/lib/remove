@@ -66,8 +66,6 @@ function remove-package () {
 }
 
 appTitle="depot"
-
-# Change mapfile to /usr/share/doc/depot for production releases
 appVersion="$(cat doc/version 2>/dev/null || echo "unknown")"
 
 verboseLib="/usr/lib/depot/verbose"
@@ -97,7 +95,12 @@ License:
 EOF
 )"
 
-[[ $# -eq 0 ]] && { echo "$helpInfo" ; exit 0 ; }
+# Preflight checks
+[[ ! -x "$verboseLib" ]] && { echo "Error: verbose library not found at $verboseLib" >&2 ; exit 1 ;}
+
+[[ $# -eq 0 ]] && { echo "$helpInfo"; exit 0; }
+
+/usr/lib/depot/verify-init
 
 [[ -f .depot/init ]] && source .depot/init
 [[ -f .depot/config ]] && source .depot/config
