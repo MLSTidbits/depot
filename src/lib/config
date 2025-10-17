@@ -1,118 +1,52 @@
 #!/usr/bin/env bash
-# depot-config — Manage maintainer and GPG configuration for a depot repository.
+set -euo pipefail
 
-# ────────────────────────────────────────────────
-# Update configuration safely
-# ────────────────────────────────────────────────
 function update-conf () {
     local key="$1" val="$2"
     local pattern="^$key="
-
     [[ -z "$val" ]] && return 0
-
     if grep -qE "$pattern" "$CONFIG_PATH"; then
         sed -i "s|$pattern.*|$key=\"$val\"|" "$CONFIG_PATH"
     else
         echo "$key=\"$val\"" >> "$CONFIG_PATH"
     fi
-
 }
 
-# Uncomment for debugging
-#set -xuo pipefail
-
 appTitle="depot"
-appVersion="$(cat doc/version 2>/dev/null || echo "unknown")"
 verboseLib="/usr/lib/depot/verbose"
 
-appInfo="$appTitle - $appVersion - Add/Modify maintainer and GPG signing configuration."
+[[ $# -eq 0 ]] && { echo "Usage: $appTitle config [--local|--global] key=value ..."; exit 0; }
 
-appHelp="$(cat <<- EOF
-$appInfo
-
-Usage: $appTitle config [--local|--global] <key>=<value> ...
-
-Flags:
-    -l, --local             Apply configuration to the current repository (default)
-    -g, --global            Apply configuration globally (~/.depot/settings.conf)
-    -h, --help              Show this help message and exit
-
-Options:
-    maintainer.name         The name of the package maintainer
-    maintainer.email        The email address of the maintainer
-    gpg.id                  The GPG key ID used for signing
-
-Examples:
-    $appTitle config --local  gpg.id=ABCDEF12
-    $appTitle config --global maintainer.email=john@example.com
-    $appTitle config maintainer.name="John Doe"
-
-Notes:
-    The config command can be run multiple times to update individual fields.
-
-Copyright:
-    2025 MLS Tidbits <contact@mlstidbits.com>
-    2025 Michael Schaecher <michaelschaecher@mlstidbits.com>
-License:
-    GPLv3+ as published by the Free Software Foundation. All rights reserved.
-
-EOF
-)"
-
-# Preflight checks
-[[ ! -x "$verboseLib" ]] && { echo "Error: verbose library not found at $verboseLib" >&2 ; exit 1 ;}
-
-[[ $# -eq 0 ]] && { echo "$appHelp"; exit 0; }
-
+CONFIG_SCOPE="local"
 MAINTAINER_NAME=""
 MAINTAINER_EMAIL=""
 GPG_KEY_ID=""
 
-/usr/lib/depot/verify-init
-
-while [[ "$#" -gt "0" ]] ; do case "$1" in
-        -l|--local              ) CONFIG_SCOPE="local"                   ; shift  ;;
-        -g|--global             )
-            CONFIG_SCOPE="global" ; mkdir -p "$HOME/.depot"
-            shift
-        ;;
-        -h|--help               ) echo "$appHelp"                        ; exit 0 ;;
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        -l|--local)  CONFIG_SCOPE="local"; shift ;;
+        -g|--global) CONFIG_SCOPE="global"; mkdir -p "$HOME/.depot"; shift ;;
+        -h|--help)   echo "Help text..."; exit 0 ;;
         *)
-            [[ -z "$CONFIG_SCOPE" ]] && $verboseLib error "You must specify either --local or --global."
-
-            [[ "$1" != *"\ "* ]] && $verboseLib error "Invalid argument format: '$1'. Use <key> <value>."
-
-            for pair in "$@" ; do
-
-                VALUE="$2"
-
-                case "$pair" in
-                    maintainer.name ) MAINTAINER_NAME="$VALUE"                    ;;
-                    maintainer.email) MAINTAINER_EMAIL="$VALUE"                   ;;
-                    gpg.id          ) GPG_KEY_ID="$VALUE"                         ;;
-                    *               )
-                        $verboseLib error "Unknown configuration key: '$1'"
-                    ;;
+            for arg in "$@"; do
+                # [[ "$arg" != *=* ]] && "$verboseLib" error "Invalid argument: '$arg'"
+                key="${arg%%=*}"
+                val="${arg#*=}"
+                case "$key" in
+                    maintainer.name ) MAINTAINER_NAME="$val"  ;;
+                    maintainer.email) MAINTAINER_EMAIL="$val" ;;
+                    gpg.id          ) GPG_KEY_ID="$val"       ;;
+                    *) "$verboseLib" error "Unknown key: '$key'" ;;
                 esac
-
             done
-
             break
         ;;
-esac ; done
+    esac
+done
 
 CONFIG_FILE="settings.conf"
-
-if [[ "$CONFIG_SCOPE" == "local" ]]; then
-    if [[ ! -d .depot ]]; then
-        "$verboseLib" error "No local repository found. Run '$appTitle init' first."
-        exit 1
-    fi
-    CONFIG_PATH=".depot/$CONFIG_FILE"
-else
-    CONFIG_PATH="$HOME/.depot/$CONFIG_FILE"
-fi
-
+CONFIG_PATH=$([[ "$CONFIG_SCOPE" == "local" ]] && echo ".depot/$CONFIG_FILE" || echo "$HOME/.depot/$CONFIG_FILE")
+mkdir -p "$(dirname "$CONFIG_PATH")"
 touch "$CONFIG_PATH"
 
 update-conf "MAINTAINER_NAME"  "$MAINTAINER_NAME"
