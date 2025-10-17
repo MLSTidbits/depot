@@ -59,13 +59,15 @@ EOL
     eval "$genReleaseHash" >> "$tempFile" 2> /dev/null ||
     $verboseLib error "Failed to generate Release file content"
 
-    if [[ -n "$sign" ]] ; then
+    $verboseLib info "Generated Release file content."
+
+    if [[ "$SIGN" == true || -n "$key" ]] ; then
 
         # Verify that the GPG key exists
         gpg --list-keys "$key" > /dev/null 2>&1 ||
         $verboseLib error "GPG key '$key' not found. Cannot sign Release file."
 
-        eval "$gpgSign --output $tempFile.gpg --detach-sign $tempFile" 2> /dev/null ||
+        eval "$gpgSign -- --output $tempFile.gpg --detach-sign $tempFile" 2> /dev/null ||
         $verboseLib error "Failed to sign Release file and create detached signature at $tempFile.gpg"
 
         eval "$gpgSign --output $tempFile.inrelease --clearsign $tempFile" 2> /dev/null ||
