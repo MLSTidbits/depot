@@ -6,3 +6,4 @@ src/lib/config usr/lib/depot/
 src/lib/key usr/lib/depot/
 src/lib/update usr/lib/depot/
 src/lib/verbose usr/lib/depot/
+src/lib/verify-init usr/lib/depot/

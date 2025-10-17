@@ -4,7 +4,7 @@
 
 verboseLib="/usr/lib/depot/verbose"
 
-[[ ! -f .depot/init ]] && $verboseLib error "Not a depot repository (missing .depot/init)."
+[[ ! -f .depot/config ]] && $verboseLib error "Not a depot repository (missing .depot/init)."
 
 if [[ -f $HOME/.depot/config ]] ; then
     source .depot/config
