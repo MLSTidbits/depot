@@ -8,76 +8,92 @@ function update-database () {
     local tempFile
     local gpgCmd
 
-    tempFile=$(mktemp)
+    tempFile="$(mktemp /tmp/depot-packages.XXXXXX)" ||
+    $verboseLib error "Failed to create temporary file for Packages generation"
 
-    apt-ftparchive packages pool > "$tempFile" || $verboseLib error "Failed to rebuild the Packages file"
+    local genPackageFile="apt-ftparchive packages pool"
 
-    if [[ "$DRY_RUN" == true ]]; then
-        $verboseLib info "Dry run mode enabled. The following would be written to the Packages file:"
-        cat "$tempFile"
-        rm -f "$tempFile"
-    else
-        mv "$tempFile" "${baseDir}/$suite/$components/binary-$arch/Packages"
-        $verboseLib info "Updated Packages file at ${baseDir}/$suite/$components/binary-$arch/Packages"
-    fi
-
-    $verboseLib error "Failed to generate Release file content"
-
-    if [[ "$DRY_RUN" == true ]]; then
-        $verboseLib info "Dry run mode enabled. The following would be written to the Release file:"
-        cat "${tempFile}"
-        rm -f "${tempFile}"
-    else
-        mv "${tempFile}" "${releaseFile}"
-        $verboseLib info "Updated Release file at ${releaseFile}"
-    fi
-
-    {
-        echo "Origin: $origin"
-        echo "Label: $label"
-        echo "Suite: $suite"
-        echo "Codename: $codename"
-        echo "Architectures: $arch"
-        echo "Components: $components"
-        echo "Description: $description"
-        echo "Maintainer: $maintainer"
-    } > "${tempFile}"
-
-    apt-ftparchive release "${baseDir}/dists/$suite" >> "${tempFile}" ||
-    $verboseLib error "Failed to generate Release file content"
+    local packageFile="$baseDir/$suite/$components/binary-$arch/Packages"
 
     local releaseFile="${baseDir}/$suite/Release"
+
+    local genRelease ; genRelease="$(cat <<- EOL
+    Origin: $origin
+    Label: $label
+    Suite: $suite
+    Codename: $codename
+    Architectures: $arch
+    Components: $components
+    Description: $description
+    Maintainer: $maintainer
+EOL
+    )"
+
+    [[ "$DRY_RUN" == true ]] && $verboseLib info "Dry run mode enabled. No changes will be made."
+    eval "$genPackageFile" 2> /dev/null ||
+
+    for c in gzip bzip2 xz; do
+
+        ! eval "$genPackageFile" | $c -k -f - > "$packageFile/$tempFile.$c" 2> /dev/null &&
+        $verboseLib error "Failed to generate compressed Packages file at $packageFile/Packages.$c"
+
+        $verboseLib info "$genPackageFile" | $c -k -f - > "$packageFile/$tempFile.$c"
+
+        if [[ "$DRY_RUN" == true ]]; then
+            rm -f "$packageFile/$tempFile.$c"
+        else
+            mv "$packageFile/$tempFile.$c" "$packageFile/Packages.$c" ||
+            $verboseLib error "Failed to update the compressed Packages file at $packageFile/Packages.$c"
+        fi
+
+    done
+
+    local genReleaseHash="apt-ftparchive release"
 
     local releaseGPG="${baseDir}/$suite/Release.gpg"
     local inRelease="${baseDir}/$suite/InRelease"
 
-    if [[ "$DRY_RUN" == true ]]; then
-        $verboseLib info "Dry run mode enabled. The following would be written to the Release file:"
-        cat "${tempFile}"
-        rm -f "${tempFile}"
-    else
-        mv "${tempFile}" "${releaseFile}"
-        $verboseLib info "Updated Release file at ${releaseFile}"
+    local gpgSign="gpg --default-key $key"
+
+    echo "$genRelease" > "$tempFile"
+    eval "$genReleaseHash" >> "$tempFile" 2> /dev/null ||
+    $verboseLib error "Failed to generate Release file content"
+
+    if [[ -n "$sign" ]] ; then
+
+        # Verify that the GPG key exists
+        gpg --list-keys "$key" > /dev/null 2>&1 ||
+        $verboseLib error "GPG key '$key' not found. Cannot sign Release file."
+
+        eval "$gpgSign --output $tempFile.gpg --detach-sign $tempFile" 2> /dev/null ||
+        $verboseLib error "Failed to sign Release file and create detached signature at $tempFile.gpg"
+
+        eval "$gpgSign --output $tempFile.inrelease --clearsign $tempFile" 2> /dev/null ||
+        $verboseLib error "Failed to sign Release file and create InRelease at $tempFile.inrelease"
+
+        $verboseLib info "Signed Release file and created detached signature at $releaseGPG"
+        $verboseLib info "Signed Release file and created InRelease at $inRelease"
+
+        if [[ "$DRY_RUN" == true ]]; then
+
+            rm -f "$tempFile.gpg" "$tempFile.inrelease"
+
+        else
+
+            mv -v "$tempFile.gpg" "$releaseGPG" ||
+            $verboseLib error "Failed to update the detached signature at $releaseGPG"
+
+            mv -v "$tempFile.inrelease" "$inRelease" ||
+            $verboseLib error "Failed to update the InRelease file at $inRelease"
+
+        fi
+
     fi
 
-    if [[ "$SIGN" == true || -n "$key" ]]; then
-        gpgCmd="gpg --default-key $key --output $releaseGPG --detach-sign $releaseFile"
-        if [[ "$DRY_RUN" == true ]]; then
-            $verboseLib info "Dry run mode enabled. The following GPG command would be executed:"
-            $verboseLib info "${gpgCmd}"
-        else
-            eval "${gpgCmd}" 2> /dev/null
-            $verboseLib info "Signed Release file and created detached signature at ${baseDir}/main/Release.gpg"
-        fi
-        gpgCmd="gpg --default-key $key --output $inRelease --clearsign $releaseFile"
-        if [[ "$DRY_RUN" == true ]]; then
-            $verboseLib info "Dry run mode enabled. The following GPG command would be executed:"
-            $verboseLib info "${gpgCmd}"
-        else
-            eval "${gpgCmd}" 2> /dev/null
-            $verboseLib info "Signed Release file and created InRelease at ${baseDir}/main/InRelease"
-        fi
-    fi
+    [[ "$DRY_RUN" == "true" ]] && { rm -f "$tempFile"; return 0; }
+
+    mv "$tempFile" "$releaseFile" ||
+    $verboseLib error "Failed to update the Release file at $releaseFile"
 
     return 0
 }
@@ -163,7 +179,7 @@ while [[ $# -gt 0 ]]; do case "$1" in
     -d|--dry-run            ) DRY_RUN=true                  ; shift   ;;
     -s|--sign               ) SIGN=true                     ; shift   ;;
     -D|--description        ) description="$2"              ; shift 2 ;;
-    -h|--help               ) echo "$appInfo"               ; exit 0  ;;
+    -h|--help               ) echo "$helpInfo"              ; exit 0  ;;
     -*                      ) $verboseLib error "Unknown option: $1"  ;;
     *                       ) break                                   ;;
 esac ; done
