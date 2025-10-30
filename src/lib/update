@@ -178,12 +178,12 @@ EOL
 /usr/lib/depot/verify-init
 
 while [[ $# -gt 0 ]]; do case "$1" in
-    -d|--dry-run            ) DRY_RUN=true                  ; shift   ;;
-    -s|--sign               ) SIGN=true                     ; shift   ;;
-    -D|--description        ) description="$2"              ; shift 2 ;;
-    -h|--help               ) echo "$helpInfo"              ; exit 0  ;;
-    -*                      ) $verboseLib error "Unknown option: $1"  ;;
-    *                       ) break                                   ;;
+    -d|--dry-run     ) DRY_RUN=true                  ; shift   ;;
+    -s|--sign        ) SIGN=true                     ; shift   ;;
+    -D|--description ) description="$2"              ; shift 2 ;;
+    -h|--help        ) echo "$helpInfo"              ; exit 0  ;;
+    -*               ) $verboseLib error "Unknown option: $1"  ;;
+    *                ) break                                   ;;
 esac ; done
 
 update-database

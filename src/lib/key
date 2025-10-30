@@ -95,14 +95,14 @@ EOF
 /usr/lib/depot/verify-init
 
 while [[ $# -gt 0 ]] ; do case $1 in
-    -r|--real-name          ) realName="$2"          ; shift 2 ;;
-    -e|--email              ) email="$2"             ; shift 2 ;;
-    -l|--length             ) keyLength="$2"         ; shift 2 ;;
-    -c|--comment            ) comment="$2"           ; shift 2 ;;
-    -E|--expires            ) expireDays="$2"        ; shift 2 ;;
-    -L|--list-keys          ) gpg --list-secret-keys ; exit 0  ;;
-    -h|--help               ) echo "$helpInfo"       ; exit 0  ;;
-    *                       ) break                            ;;
+    -r|--real-name ) realName="$2"          ; shift 2 ;;
+    -e|--email     ) email="$2"             ; shift 2 ;;
+    -l|--length    ) keyLength="$2"         ; shift 2 ;;
+    -c|--comment   ) comment="$2"           ; shift 2 ;;
+    -E|--expires   ) expireDays="$2"        ; shift 2 ;;
+    -L|--list-keys ) gpg --list-secret-keys ; exit 0  ;;
+    -h|--help      ) echo "$helpInfo"       ; exit 0  ;;
+    *              ) break                            ;;
 esac ; done
 
 generate-key "$realName" "$email" "$comment" "$expireDays"

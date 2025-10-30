@@ -60,15 +60,15 @@ EOL
 [[ $# -eq 0 ]] && { echo "$appHelp" ; exit 0 ; }
 
 case "$1" in
-    init                    ) shift ; /usr/lib/depot/init "$@"          ;;
-    add                     ) shift ; /usr/lib/depot/add "$@"           ;;
-    rm                      ) shift ; /usr/lib/depot/remove "$@"        ;;
-    update                  ) shift ; /usr/lib/depot/update "$@"        ;;
-    key                     ) shift ; /usr/lib/depot/sign "$@"          ;;
-    config                  ) shift ; /usr/lib/depot/config "$@"        ;;
-    help                    ) echo "$appHelp"                  ; exit 0 ;;
-    version|-v|--version    ) echo -e "$appInfo\n\n$copyright" ; exit 0 ;;
-    *                       )
+    init                 ) shift ; /usr/lib/depot/init "$@"          ;;
+    add                  ) shift ; /usr/lib/depot/add "$@"           ;;
+    rm                   ) shift ; /usr/lib/depot/remove "$@"        ;;
+    update               ) shift ; /usr/lib/depot/update "$@"        ;;
+    key                  ) shift ; /usr/lib/depot/sign "$@"          ;;
+    config               ) shift ; /usr/lib/depot/config "$@"        ;;
+    help                 ) echo "$appHelp"                  ; exit 0 ;;
+    version|-v|--version ) echo -e "$appInfo\n\n$copyright" ; exit 0 ;;
+    *                    )
         $verboseLib error "Unknown command: \`$1\`. Use '$0 help' to see available commands."
     ;;
 esac

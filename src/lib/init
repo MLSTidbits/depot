@@ -83,7 +83,7 @@ echo "Components: ${COMPONENTS[*]}"
 # Create depot metadata
 mkdir -p .depot
 
-cat > .depot/config <<- EOF
+cat > .depot/init <<- EOF
 # depot repository configuration
 REPO_DIR=$(pwd)
 ORIGIN="$ORIGIN"

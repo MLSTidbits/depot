@@ -81,9 +81,9 @@ EOF
 [[ ! -f .depot/init ]] && $verboseLib error "Not a depot repository (missing .depot/init)."
 
 if [[ -f $HOME/.depot/config ]] ; then
-    source .depot/config
+    source .depot/settings.conf
 elif [[ -f .depot/config ]] ; then
-    source .depot/config
+    source .depot/settings.conf
 else
     $verboseLib error "No configuration found (missing .depot/config or \$HOME/.depot/config)."
 fi
@@ -101,13 +101,13 @@ pool="${POOL:-alpha}"
 
 while [[ $# -gt 0 ]]; do
     case "$1" in
-        -a|--all)       addAll=true; shift ;;
-        -s|--single)    addAll=false; shift ;;
-        -b|--buildinfo) addBuildinfo=true; shift ;;
-        -c|--changes)   addChanges=true; shift ;;
-        -h|--help)      echo "$helpInfo"; exit 0 ;;
-        -*)             $verboseLib error "Unknown option: $1"; exit 1 ;;
-        *)              targetPath="$1"; shift ;;
+        -a|--all       ) addAll=true                            ; shift  ;;
+        -s|--single    ) addAll=false                           ; shift  ;;
+        -b|--buildinfo ) addBuildinfo=true                      ; shift  ;;
+        -c|--changes   ) addChanges=true                        ; shift  ;;
+        -h|--help      ) echo "$helpInfo"                       ; exit 0 ;;
+        -*             ) $verboseLib error "Unknown option: $1" ; exit 1 ;;
+        *              ) targetPath="$1"                        ; shift  ;;
     esac
 done
 

@@ -123,11 +123,11 @@ archs=( "${arch}" )
 shift
 
 while [[ $# -gt 0 ]]; do case "$1" in
-    -v|--version            ) version="$1"                  ; shift  ;;
-    -a|--arch               ) archs=( "$1" )                ; shift  ;;
-    -h|--help               ) echo "$helpInfo"              ; exit 0 ;;
-    -*                      ) $verboseLib error "Unknown option: $1" ;;
-    *                       ) package="$1"                  ; break  ;;
+    -v|--version ) version="$1"                  ; shift  ;;
+    -a|--arch    ) archs=( "$1" )                ; shift  ;;
+    -h|--help    ) echo "$helpInfo"              ; exit 0 ;;
+    -*           ) $verboseLib error "Unknown option: $1" ;;
+    *            ) package="$1"                  ; break  ;;
 esac ; done
 
 remove-package "$version $arch $package"

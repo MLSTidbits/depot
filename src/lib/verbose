@@ -9,9 +9,9 @@ appTitle="depot"
 appVersion="$(cat /usr/share/doc/depot/version 2>/dev/null || echo "unknown")"
 
 case "$1" in
-    info                    ) echo -e "$appTitle - [$1] $2"          ;;
-    warning                 ) echo -e "$appTitle - [$1] $2"          ;;
-    error                   ) echo -e "$appTitle - [$1] $2" ; exit 1 ;;
-    *                       ) echo -e "$appTitle - [unknown] $2"     ;;
+    info    ) echo -e "$appTitle - [$1] $2"          ;;
+    warning ) echo -e "$appTitle - [$1] $2"          ;;
+    error   ) echo -e "$appTitle - [$1] $2" ; exit 1 ;;
+    *       ) echo -e "$appTitle - [unknown] $2"     ;;
 esac
 

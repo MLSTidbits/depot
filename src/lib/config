@@ -24,18 +24,18 @@ GPG_KEY_ID=""
 
 while [[ $# -gt 0 ]]; do
     case "$1" in
-        -l|--local)  CONFIG_SCOPE="local"; shift ;;
-        -g|--global) CONFIG_SCOPE="global"; mkdir -p "$HOME/.depot"; shift ;;
-        -h|--help)   echo "Help text..."; exit 0 ;;
+        -l|--local  )  CONFIG_SCOPE="local" ; shift                           ;;
+        -g|--global ) CONFIG_SCOPE="global" ; mkdir -p "$HOME/.depot" ; shift ;;
+        -h|--help   )   echo "Help text..." ; exit 0                          ;;
         *)
             for arg in "$@"; do
                 key="${arg%%=*}"
                 val="${arg#*=}"
                 case "$key" in
-                    maintainer.name ) MAINTAINER_NAME="$val"  ;;
-                    maintainer.email) MAINTAINER_EMAIL="$val" ;;
-                    gpg.id          ) GPG_KEY_ID="$val"       ;;
-                    *) "$verboseLib" error "Unknown key: '$key'" ;;
+                    maintainer.name  ) MAINTAINER_NAME="$val"                    ;;
+                    maintainer.email ) MAINTAINER_EMAIL="$val"                   ;;
+                    gpg.id           ) GPG_KEY_ID="$val"                         ;;
+                    *                ) "$verboseLib" error "Unknown key: '$key'" ;;
                 esac
             done
             break
