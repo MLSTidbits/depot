@@ -4,12 +4,12 @@
 
 verboseLib="/usr/lib/depot/verbose"
 
-[[ ! -f .depot/config ]] && $verboseLib error "Not a depot repository (missing .depot/init)."
+[[ ! -f .depot/init ]] && $verboseLib error "Not a depot repository (missing .depot/init)."
 
-if [[ -f $HOME/.depot/config ]] ; then
-    source .depot/config
-elif [[ -f .depot/config ]] ; then
-    source .depot/config
-else
-    $verboseLib error "No configuration found (missing .depot/config or \$HOME/.depot/config)."
-fi
+[[ -f $HOME/.depot/settings.conf ]] && source .depot/settings.conf
+[[ -f .depot/settings.conf ]] && source .depot/config
+
+[[ ! -f $HOME/.depot/settings.conf && ! -f .depot/settings.conf ]] &&
+$verboseLib error "No configuration found (missing .depot/config or \$HOME/.depot/config)."
+
+return 0
