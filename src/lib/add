@@ -3,7 +3,7 @@
 # depot add — Add .deb packages (and optional .buildinfo / .changes files)
 #
 
-function add_package () {
+function add-package () {
     local deb="$1"
     [[ ! -f "$deb" ]] && { $verboseLib error "File not found: $deb"; return 1; }
 
@@ -17,11 +17,8 @@ function add_package () {
     case "$pool" in
         alpha       ) destDir="$poolDir/$firstLetter/$pkg" ;;
         library     )
-            if [[ "$pkg" == lib* ]]; then
-                destDir="$poolDir/l/$pkg"
-            else
-                destDir="$poolDir/$firstLetter/$pkg"
-            fi
+            [[  "$pkg" == lib*  ]] &&
+            destDir="$poolDir/l/$pkg" || destDir="$poolDir/$firstLetter/$pkg"
         ;;
         flat|*      ) destDir="$poolDir/$pkg" ;;
     esac
@@ -113,23 +110,15 @@ done
 
 [[ -z "$targetPath" ]] && $verboseLib error "No package or directory specified."
 
-# ---------------------------------------------------------------------------
-# Function: add a single .deb (and related files)
-# ---------------------------------------------------------------------------
-
-
-# ---------------------------------------------------------------------------
-# Main Logic: single or all
-# ---------------------------------------------------------------------------
 if $addAll; then
     [[ ! -d "$targetPath" ]] && $verboseLib error "Directory not found: $targetPath"
     $verboseLib info "Recursively adding all packages from: $targetPath"
 
     find "$targetPath" -type f -name "*.deb" | while read -r deb; do
-        add_package "$deb"
+        add-package "$deb"
     done
 else
-    add_package "$targetPath"
+    add-package "$targetPath"
 fi
 
 exit 0
