@@ -29,7 +29,6 @@ while [[ $# -gt 0 ]]; do
         -h|--help)   echo "Help text..."; exit 0 ;;
         *)
             for arg in "$@"; do
-                # [[ "$arg" != *=* ]] && "$verboseLib" error "Invalid argument: '$arg'"
                 key="${arg%%=*}"
                 val="${arg#*=}"
                 case "$key" in
