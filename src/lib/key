@@ -92,7 +92,7 @@ EOF
 
 [[ $# -eq 0 ]] && { echo "$helpInfo"; exit 0; }
 
-/usr/lib/depot/verify-init
+/usr/lib/depot/verify-init || $verboseLib error "Missing required initialization."
 
 while [[ $# -gt 0 ]] ; do case $1 in
     -r|--real-name ) realName="$2"          ; shift 2 ;;

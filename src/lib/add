@@ -75,15 +75,7 @@ EOF
 
 [[ $# -eq 0 ]] && { echo "$helpInfo"; exit 0; }
 
-[[ ! -f .depot/init ]] && $verboseLib error "Not a depot repository (missing .depot/init)."
-
-if [[ -f $HOME/.depot/config ]] ; then
-    source .depot/settings.conf
-elif [[ -f .depot/config ]] ; then
-    source .depot/settings.conf
-else
-    $verboseLib error "No configuration found (missing .depot/config or \$HOME/.depot/config)."
-fi
+/usr/lib/depot/verify-init || $verboseLib error "Missing required initialization."
 
 [[ -f .depot/init ]] && source .depot/init
 [[ -f .depot/config ]] && source .depot/config
