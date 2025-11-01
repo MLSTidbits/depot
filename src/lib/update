@@ -175,7 +175,7 @@ EOL
 
 [[ $# -eq 0 ]] && { echo "$helpInfo"; exit 0; }
 
-/usr/lib/depot/verify-init || $verboseLib error "Missing required initialization."
+/usr/lib/depot/verify-init
 
 while [[ $# -gt 0 ]]; do case "$1" in
     -d|--dry-run     ) DRY_RUN=true                  ; shift   ;;

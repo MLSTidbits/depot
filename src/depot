@@ -57,6 +57,11 @@ verboseLib="/usr/lib/depot/verbose"
 EOL
 )"
 
+[[ -f .depot/init ]] && "source .depot/init" 2> /dev/null
+
+[[ -f $HOME/.depot/settings.conf ]] && source "$HOME/.depot/settings.conf" 2> /dev/null
+[[ -f .depot/settings.conf ]] && source ".depot/settings.conf" 2> /dev/null
+
 [[ $# -eq 0 ]] && { echo "$appHelp" ; exit 0 ; }
 
 case "$1" in

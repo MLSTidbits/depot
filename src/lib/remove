@@ -100,7 +100,7 @@ EOF
 
 [[ $# -eq 0 ]] && { echo "$helpInfo"; exit 0; }
 
-/usr/lib/depot/verify-init || $verboseLib error "Missing required initialization."
+/usr/lib/depot/verify-init
 
 [[ -f .depot/init ]] && source .depot/init
 [[ -f .depot/config ]] && source .depot/config
