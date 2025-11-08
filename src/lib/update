@@ -2,22 +2,22 @@
 
 # `update` Updates the package database and Release files of a Debian package repository.
 
+# shellcheck disable=SC2155
 function update-database () {
 
     local baseDir="${PWD}"
-    local tempFile
-    local gpgCmd
 
-    tempFile="$(mktemp /tmp/depot-packages.XXXXXX)" ||
-    $verboseLib error "Failed to create temporary file for Packages generation"
+    local tempFile="$(mktemp /tmp/depot-packages.XXXXXX)"
 
     local genPackageFile="apt-ftparchive packages pool"
 
-    local packageFile="$baseDir/$suite/$components/binary-$arch/Packages"
+    local packageFile="$baseDir/dists/$suite/$components/binary-$arch/Packages"
 
-    local releaseFile="${baseDir}/$suite/Release"
+    local releaseFile="${baseDir}/dists/$suite/Release"
 
-    local genRelease ; genRelease="$(cat <<- EOL
+    local inreleaseFile="${baseDir}/dists/$suite/InRelease"
+
+    local genRelease="$(cat <<- EOL
     Origin: $origin
     Label: $label
     Suite: $suite
@@ -29,24 +29,25 @@ function update-database () {
 EOL
     )"
 
-    [[ "$DRY_RUN" == true ]] && $verboseLib info "Dry run mode enabled. No changes will be made."
-    eval "$genPackageFile" 2> /dev/null ||
+    apt-ftparchive packages pool > "$packageFile" 2> /dev/null || {
+    $verboseLib error "Failed to generate Packages file at $packageFile." ; exit 1; }
+
+    [[ $? -gt 0 ]] && $verboseLib "error" "Failed to generate Packages file at $packageFile."
+
+    [[ "$DRY_RUN" == "true" ]] && rm -f "$packageFile"
 
     for c in gzip bzip2 xz; do
 
-        ! eval "$genPackageFile" | $c -k -f - > "$packageFile/$tempFile.$c" 2> /dev/null &&
-        $verboseLib error "Failed to generate compressed Packages file at $packageFile/Packages.$c"
+        [[ "$DRY_RUN" == "true" ]] && break
 
-        $verboseLib info "$genPackageFile" | $c -k -f - > "$packageFile/$tempFile.$c"
+        $c -k -f "$packageFile" || { $verboseLib \
+        error "Failed to generate compressed Packages file at Packages.$c" ; exit 1; }
 
-        if [[ "$DRY_RUN" == true ]]; then
-            rm -f "$packageFile/$tempFile.$c"
-        else
-            mv "$packageFile/$tempFile.$c" "$packageFile/Packages.$c" ||
-            $verboseLib error "Failed to update the compressed Packages file at $packageFile/Packages.$c"
-        fi
+        $verboseLib info "Generated compressed Packages file at $packageFile.$c"
 
     done
+
+    rm -f "$packageFile"
 
     local genReleaseHash="apt-ftparchive release"
 
@@ -55,47 +56,39 @@ EOL
 
     local gpgSign="gpg --default-key $key"
 
-    echo "$genRelease" > "$tempFile"
-    eval "$genReleaseHash" >> "$tempFile" 2> /dev/null ||
-    $verboseLib error "Failed to generate Release file content"
+    echo "$genRelease" > "$releaseFile" || { $verboseLib \
+    error "Failed to write Release file header to $releaseFile" ; exit 1; }
+
+    apt-ftparchive release dists/"$suite" >> "$releaseFile" 2> /dev/null ||
+    { $verboseLib error "Failed to generate Release file at $releaseFile." ; exit 1; }
 
     $verboseLib info "Generated Release file content."
+
+    [[ "$DRY_RUN" == "true" ]] && return 0
 
     if [[ "$SIGN" == true || -n "$key" ]] ; then
 
         # Verify that the GPG key exists
         gpg --list-keys "$key" > /dev/null 2>&1 ||
-        $verboseLib error "GPG key '$key' not found. Cannot sign Release file."
+        { $verboseLib error "GPG key '$key' not found. Cannot sign Release file." ; exit 1; }
 
-        eval "$gpgSign -- --output $tempFile.gpg --detach-sign $tempFile" 2> /dev/null ||
-        $verboseLib error "Failed to sign Release file and create detached signature at $tempFile.gpg"
+        # Remove old signatures if they exist
 
-        eval "$gpgSign --output $tempFile.inrelease --clearsign $tempFile" 2> /dev/null ||
-        $verboseLib error "Failed to sign Release file and create InRelease at $tempFile.inrelease"
+        gpg --default-key "$key" \
+            --output "$releaseFile.gpg" \
+            --detach-sign "$releaseFile" 2> /dev/null ||
+        { $verboseLib error "Failed creating detached signature at $releaseFile.gpg" ; exit 1; }
 
-        $verboseLib info "Signed Release file and created detached signature at $releaseGPG"
+        $verboseLib info "Signed Release file and created detached signature at $releaseFile.gpg"
+
+        gpg --default-key "$key" \
+            --output "$inreleaseFile" \
+            --clearsign "$releaseFile" 2> /dev/null ||
+        { $verboseLib error "Failed creating $inreleaseFile" ; exit 1; }
+
         $verboseLib info "Signed Release file and created InRelease at $inRelease"
 
-        if [[ "$DRY_RUN" == true ]]; then
-
-            rm -f "$tempFile.gpg" "$tempFile.inrelease"
-
-        else
-
-            mv -v "$tempFile.gpg" "$releaseGPG" ||
-            $verboseLib error "Failed to update the detached signature at $releaseGPG"
-
-            mv -v "$tempFile.inrelease" "$inRelease" ||
-            $verboseLib error "Failed to update the InRelease file at $inRelease"
-
-        fi
-
     fi
-
-    [[ "$DRY_RUN" == "true" ]] && { rm -f "$tempFile"; return 0; }
-
-    mv "$tempFile" "$releaseFile" ||
-    $verboseLib error "Failed to update the Release file at $releaseFile"
 
     return 0
 }
@@ -111,21 +104,15 @@ verboseLib="/usr/lib/depot/verbose"
 [[ ! -d .depot ]] &&
 $verboseLib error "No repository found. Please run '$0 init' first to create a new repository."
 
-# Load configuration
-source .depot/config ||
-$verboseLib error "Failed to load configuration from .depot/config"
+/usr/lib/depot/verify-init
 
-# Settings from configuration can either global or local; the local settings override global
-if [[ -f ~/.depot/settings.conf ]]; then
-    source ~/.depot/settings.conf ||
-    $verboseLib error "Failed to load global configuration from ~/.depot/settings.conf"
-elif [[ ! -f ~/.depot/settings.conf && -f .depot/settings.conf ]] ; then
-    source .depot/settings.conf ||
-    $verboseLib error "Failed to load local configuration from .depot/settings.conf"
-else
-    $verboseLib error \
-    "No settings.conf file found. Please run '$0 config' to set up the repository settings."
-fi
+# Load configuration
+source .depot/init 2> /dev/null ||
+$verboseLib error "Failed to load repository configuration from .depot/init."
+
+[[ -f "$HOME/.depot/settings.conf" ]] && source "$HOME/.depot/settings.conf" 2> /dev/null
+
+[[ -f .depot/settings.conf ]] && source .depot/settings.conf 2> /dev/null
 
 # Default values for optional settings
 origin="${ORIGIN:-"Unknown"}"
@@ -136,7 +123,11 @@ arch="${ARCH:-$(dpkg --print-architecture)}"
 components="${COMPONENTS[*]:-"main"}"
 description="${DESCRIPTION:-"Debian/Ubuntu package repository"}"
 key="${GPG_ID:-""}"
-maintainer="${MAINTAINER_NAME <$MAINTAINER_EMAIL>:-"$USER <$USER@$(hostname)>"}"
+
+maintainerName="${MAINTAINER_NAME:-"$USER"}"
+maintainerEmail="${MAINTAINER_EMAIL:-"$(hostname)"}"
+
+maintainer="$maintainerName <$maintainerEmail>"
 
 DRY_RUN=false
 SIGN=false

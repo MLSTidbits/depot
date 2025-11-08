@@ -101,13 +101,12 @@ done
 
 if $addAll; then
     [[ ! -d "$targetPath" ]] && $verboseLib error "Directory not found: $targetPath"
-    $verboseLib info "Recursively adding all packages from: $targetPath"
+    $verboseLib info "Adding all packages from directory: $targetPath"
 
-    find "$targetPath" -type f -name "*.deb" | while read -r deb; do
-        add-package "$deb"
-    done
+    for deb in "$targetPath"*.deb; do add-package "$deb" ; done
 else
     add-package "$targetPath"
 fi
+
 
 exit 0
