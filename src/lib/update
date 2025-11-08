@@ -18,16 +18,17 @@ function update-database () {
     local inreleaseFile="${baseDir}/dists/$suite/InRelease"
 
     local genRelease="$(cat <<- EOL
-    Origin: $origin
-    Label: $label
-    Suite: $suite
-    Codename: $codename
-    Architectures: $arch
-    Components: $components
-    Description: $description
-    Maintainer: $maintainer
+Origin: $origin
+Label: $label
+Suite: $suite
+Codename: $codename
+Architectures: $arch
+Version: 1.0
+Components: $components
+Description: $description
+Maintainer: $maintainer
 EOL
-    )"
+)"
 
     apt-ftparchive packages pool > "$packageFile" 2> /dev/null || {
     $verboseLib error "Failed to generate Packages file at $packageFile." ; exit 1; }
