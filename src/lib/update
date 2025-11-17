@@ -37,18 +37,18 @@ EOL
 
     [[ "$DRY_RUN" == "true" ]] && rm -f "$packageFile"
 
-    for c in gzip bzip2 xz; do
+    # for c in gzip bzip2 xz; do
 
-        [[ "$DRY_RUN" == "true" ]] && break
+    #     [[ "$DRY_RUN" == "true" ]] && break
 
-        $c -k -f "$packageFile" || { $verboseLib \
-        error "Failed to generate compressed Packages file at Packages.$c" ; exit 1; }
+    #     $c -k -f "$packageFile" || { $verboseLib \
+    #     error "Failed to generate compressed Packages file at Packages.$c" ; exit 1; }
 
-        $verboseLib info "Generated compressed Packages file at $packageFile.$c"
+    #     $verboseLib info "Generated compressed Packages file at $packageFile.$c"
 
-    done
+    # done
 
-    rm -f "$packageFile"
+    # rm -f "$packageFile"
 
     local genReleaseHash="apt-ftparchive release"
 
@@ -75,14 +75,16 @@ EOL
 
         # Remove old signatures if they exist
 
-        gpg --default-key "$key" \
+        yes "y" | gpg --yes \
+            --default-key "$key" \
             --output "$releaseFile.gpg" \
             --detach-sign "$releaseFile" 2> /dev/null ||
         { $verboseLib error "Failed creating detached signature at $releaseFile.gpg" ; exit 1; }
 
         $verboseLib info "Signed Release file and created detached signature at $releaseFile.gpg"
 
-        gpg --default-key "$key" \
+        yes "y" | gpg --yes \
+            --default-key "$key" \
             --output "$inreleaseFile" \
             --clearsign "$releaseFile" 2> /dev/null ||
         { $verboseLib error "Failed creating $inreleaseFile" ; exit 1; }
