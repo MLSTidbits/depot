@@ -31,17 +31,22 @@ function add-package () {
     local baseName="${deb%.deb}"
 
     # Optionally move associated files
-    if $addBuildinfo; then
-        for bi in "${baseName}"*.buildinfo; do
-            [[ -f "$bi" ]] && { $verboseLib info "  + moving $(basename "$bi")"; mv -v "$bi" "$destDir/"; }
-        done
-    fi
+    for bi in "${baseName}"*.buildinfo; do
+        if [[ -f "$bi" && "$addBuildinfo" == "true" ]] ; then
+            mv -v "$bi" "$destDir/"
+        else
+            $verboseLib warning "No matching buildinfo file for $deb"
+        fi
+    done
 
-    if $addChanges; then
-        for ch in "${baseName}"*.changes; do
-            [[ -f "$ch" ]] && { $verboseLib info "  + moving $(basename "$ch")"; mv -v "$ch" "$destDir/"; }
-        done
-    fi
+    for ch in "${baseName}"*.changes; do
+        if [[ -f "$ch" && "$addChanges" == "true" ]] ; then
+            mv -v "$ch" "$destDir/" ;
+        else
+            $verboseLib warning "No matching changes file for $deb"
+        fi
+    done
+
 }
 
 # Uncomment to enable debugging
