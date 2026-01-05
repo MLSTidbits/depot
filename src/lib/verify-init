@@ -6,5 +6,6 @@ verboseLib="/usr/lib/depot/verbose"
 
 [[ ! -f .depot/init ]] && $verboseLib error "Not a depot repository (missing .depot/init)."
 
-[[ ! -f $HOME/.depot/settings.conf || ! -f .depot/settings.conf ]] &&
-$verboseLib warning "Configuration files not found. Using default settings."
+if [[ ! -f $HOME/.depot/settings.conf || ! -f .depot/settings.conf ]] ; then
+  $verboseLib warning "Configuration files not found. Using default settings."
+fi
