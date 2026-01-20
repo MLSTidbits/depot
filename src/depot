@@ -11,7 +11,7 @@
 appTitle="depot"
 
 # Change mapfile to /usr/share/doc/depot for production releases
-appVersion="$(cat doc/version 2>/dev/null || echo "unknown")"
+appVersion="$(cat /usr/share/doc/depot/version 2>/dev/null || echo "unknown")"
 
 verboseLib="/usr/lib/depot/verbose"
 
